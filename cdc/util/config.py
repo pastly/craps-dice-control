@@ -1,4 +1,4 @@
-import cdc.globals as G
+from .. import globals as G
 
 from configparser import (ConfigParser, ExtendedInterpolation)
 import os
