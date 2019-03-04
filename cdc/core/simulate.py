@@ -1,34 +1,13 @@
-from ..util import rand
+from ..util import stats
 from ..util.plot import xy as plot_xy
 from ..lib.argparse import BoundedInt
+from .. import globals as G
 
 from argparse import ArgumentDefaultsHelpFormatter, FileType
 import json
 import logging
 
 log = logging.getLogger(__name__)
-FAIR_DIST = [1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1]
-
-
-def simulate_roll_distribution(num_rolls, dist=None):
-    if dist is None:
-        dist = FAIR_DIST
-    assert len(dist) == 11
-    counts = {}
-    for i in range(2, 12+1):
-        counts[i] = 0
-    for _ in range(num_rolls):
-        out = rand.roll_dice_with_weights(dist)
-        counts[out] += 1
-    return counts
-
-
-def theoretical_fair_distribution(num_rolls):
-    s = sum(FAIR_DIST)
-    counts = {}
-    for i, c in enumerate(FAIR_DIST):
-        counts[i+2] = c*num_rolls/s
-    return counts
 
 
 def is_something_to_do(args):
@@ -83,7 +62,7 @@ def gen_parser(sub):
         'simulate', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
     p.add_argument(
-        'distribution', type=float, nargs=11, metavar='D', default=FAIR_DIST,
+        'distribution', type=float, nargs=11, metavar='D', default=G.FAIR_DIST,
         help='The likelyhood of rolling 2, 3, 4, ... 12')
     p.add_argument(
         '-i', '--iterations', type=BoundedInt(1, None), default=100000,
@@ -104,10 +83,11 @@ def main(args, conf):
     if not is_something_to_do(args):
         log.error("Nothing to do")
         return 1
-    obs_counts = simulate_roll_distribution(args.iterations, args.distribution)
+    obs_counts = stats.simulate_roll_distribution(
+        args.iterations, args.distribution)
     exp_counts = None
     if args.with_fair_distribution:
-        exp_counts = theoretical_fair_distribution(args.iterations)
+        exp_counts = stats.theoretical_fair_distribution(args.iterations)
     if args.roll_counts:
         do_roll_counts(args.roll_counts, obs_counts, exp_counts)
     if args.pdf_png:
