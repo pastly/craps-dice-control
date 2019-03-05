@@ -1,6 +1,7 @@
 from .util import rand
 from .util import config
 from .core import rollstats
+from .core import plot
 from .core import simulate
 from cdc import __version__
 
@@ -22,8 +23,9 @@ def create_arg_parser():
         help='Set the log level')
     p.add_argument(
         '-v', '--version', action='version', version=__version__)
-    sub = p.add_subparsers(dest='command')
+    sub = p.add_subparsers(dest='command', required=True)
     rollstats.gen_parser(sub)
+    plot.gen_parser(sub)
     simulate.gen_parser(sub)
     return p
 
@@ -37,6 +39,7 @@ def main():
     def_kwargs = {}
     known_commands = {
         'rollstats': {'f': rollstats.main, 'a': def_args, 'kw': def_kwargs},
+        'plot': {'f': plot.main, 'a': def_args, 'kw': def_kwargs},
         'simulate': {'f': simulate.main, 'a': def_args, 'kw': def_kwargs},
     }
     if args.command not in known_commands:

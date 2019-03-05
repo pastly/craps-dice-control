@@ -13,3 +13,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - 'simulate` command, which takes the given odds of rolling each number,
   simulates a bunch of rolls based on that distribution, and outputs statistics
 about those rolls
+- `plot` and `plot rollcounts` command, which takes output from
+  `simulate --roll-counts` and plots the resulting probability density
+functions
