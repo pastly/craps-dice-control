@@ -46,10 +46,18 @@ def do_plot(out_fd, obs_counts, exp_counts=None):
 
 
 def do_roll_counts(out_fd, obs_counts, exp_counts=None):
-    j = {}
-    j['simulated'] = obs_counts
+    j = []
+    j.append({
+        'label': 'Simulated',
+        'counts': obs_counts,
+        'counts_hard': {'4': 0, '6': 0, '8': 0, '10': 0},
+    })
     if exp_counts:
-        j['expected'] = exp_counts
+        j.append({
+            'label': 'Expected',
+            'counts': exp_counts,
+            'counts_hard': {'4': 0, '6': 0, '8': 0, '10': 0},
+        })
     json.dump(j, out_fd, indent=2)
 
 
