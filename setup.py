@@ -63,8 +63,6 @@ setup(
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
     packages=find_packages(),
@@ -74,7 +72,7 @@ setup(
     },
     data_files=get_data_files(),
     keywords='craps simulation dice statistics',
-    python_requires='>=3.5',
+    python_requires='>=3.7',
     entry_points={
         'console_scripts': [
             'cdc = cdc.__main__:main',
