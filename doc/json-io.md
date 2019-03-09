@@ -30,7 +30,6 @@ a perfectly fair distribution would not output perfectly fair data.
 
 ## Schema
 
-    [
         {
             label: str,
             counts: {
@@ -54,11 +53,9 @@ a perfectly fair distribution would not output perfectly fair data.
             },
         },
         ...
-    ]
 
 ## Example
 
-    [
         {
             label: "Thursday Night",
             counts: {
@@ -80,27 +77,4 @@ a perfectly fair distribution would not output perfectly fair data.
                 8: 8,
                 10: 6,
             },
-        },
-        {
-            label: "Friday Night",
-            counts: {
-                2: 8,
-                3: 13,
-                4: 26,
-                5: 15,
-                6: 24,
-                7: 32,
-                8: 29,
-                9: 25,
-                10: 10,
-                11: 11,
-                12: 7,
-            },
-            counts_hard: {
-                4: 4,
-                6: 7,
-                8: 7,
-                10: 6,
-            },
-        },
-    ]
+        }
