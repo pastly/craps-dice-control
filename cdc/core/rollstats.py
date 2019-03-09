@@ -1,9 +1,11 @@
 from ..util import stats
 from ..util.json import NumericKeyDecoder
+from ..lib.argparse import TryAppendFileType
 
 from argparse import ArgumentDefaultsHelpFormatter, FileType
 import json
 import logging
+import sys
 
 from scipy.stats import chisquare
 
@@ -63,12 +65,12 @@ def gen_parser(sub):
         'rollstats', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
     p.add_argument(
-        '-i', '--input', type=FileType('rt'), default='/dev/stdin',
+        '-i', '--input', type=FileType('rt'), default=sys.stdin,
         help='From where to read roll data')
     p.add_argument(
-        '--statistics', type=FileType('wt'),
+        '--statistics', type=TryAppendFileType('at'),
         help='Where to write json-formatted statistical information about '
-        'rolls')
+        'rolls. Will append to end, if possible.')
 
 
 def main(args, conf):

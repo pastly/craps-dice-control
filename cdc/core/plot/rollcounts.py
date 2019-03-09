@@ -3,6 +3,7 @@ from ...util.json import NumericKeyDecoder
 from argparse import ArgumentDefaultsHelpFormatter, FileType
 import json
 import logging
+import sys
 
 import matplotlib
 matplotlib.use('Agg')
@@ -75,10 +76,10 @@ def gen_parser(sub):
         'rollcounts', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
     p.add_argument(
-        '-i', '--input', type=FileType('rt'), default='/dev/stdin',
+        '-i', '--input', type=FileType('rt'), default=sys.stdin,
         help='From where to read json-formatted data')
     p.add_argument(
-        '-o', '--output', type=FileType('wb'), default='/dev/stdout',
+        '-o', '--output', type=FileType('wb'), default=sys.stdout,
         help='File to which to write graph')
     return p
 

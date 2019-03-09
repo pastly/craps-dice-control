@@ -1,6 +1,9 @@
 from argparse import ArgumentDefaultsHelpFormatter, FileType
 import logging
 import json
+import sys
+
+from ...lib.argparse import TryAppendFileType
 
 log = logging.getLogger(__name__)
 
@@ -55,11 +58,11 @@ def gen_parser(sub):
         'rollseries', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
     p.add_argument(
-        '-i', '--input', type=FileType('rt'), default='/dev/stdin',
+        '-i', '--input', type=FileType('rt'), default=sys.stdin,
         help='From where to read data')
     p.add_argument(
-        '-o', '--output', type=FileType('wt'), default='/dev/stdout',
-        help='File to which to write data')
+        '-o', '--output', type=TryAppendFileType('at'), default=sys.stdout,
+        help='File to which to write data. Will append to end, if possible.')
     p.add_argument(
         '-f', '--out-format', choices=('counts',), required=True)
     p.add_argument(

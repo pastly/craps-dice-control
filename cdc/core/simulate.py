@@ -50,7 +50,7 @@ def gen_parser(sub):
         '-i', '--iterations', type=BoundedInt(1, None), default=100000,
         help='How many time to roll the dice using the given probabilities')
     p.add_argument(
-        '--roll-counts', type=FileType('wt'),
+        '--roll-counts', type=FileType('at'),
         help='File to write json-formatted roll count data')
     p.add_argument(
         '--with-fair-distribution', action='store_true',
