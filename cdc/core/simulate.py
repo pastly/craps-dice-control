@@ -1,8 +1,8 @@
 from ..util import stats
-from ..lib.argparse import BoundedInt
+from ..lib.argparse import BoundedInt, TryAppendFileType
 from .. import globals as G
 
-from argparse import ArgumentDefaultsHelpFormatter, FileType
+from argparse import ArgumentDefaultsHelpFormatter
 import json
 import logging
 
@@ -52,7 +52,7 @@ def gen_parser(sub):
         '-i', '--iterations', type=BoundedInt(1, None), default=100000,
         help='How many time to roll the dice using the given probabilities')
     p.add_argument(
-        '--roll-counts', type=FileType('at'),
+        '--roll-counts', type=TryAppendFileType('at'),
         help='File to write json-formatted roll count data')
     p.add_argument(
         '--with-fair-distribution', action='store_true',
