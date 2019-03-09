@@ -24,7 +24,7 @@ not `1` (AKA `0x01`, AKA `0b00000001`)
 
 **Producers**:
 
-**Consumers**: rollstats
+**Consumers**: `parse rollseries`
 
 ## Examples
 
