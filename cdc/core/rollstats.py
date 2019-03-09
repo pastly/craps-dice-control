@@ -1,4 +1,5 @@
 from ..util import stats
+from ..util.json import NumericKeyDecoder
 
 from argparse import ArgumentDefaultsHelpFormatter, FileType
 import json
@@ -10,37 +11,9 @@ log = logging.getLogger(__name__)
 MIN_ALLOWED_COUNT = 5
 
 
-def read_input_into_gen(fd):
-    buf_int = None
-    for line in fd:
-        line = line.strip()
-        if not len(line):
-            continue
-        if line[0] == '#':
-            continue
-        for word in line.split():
-            for c in word:
-                try:
-                    i = int(c)
-                except ValueError as e:
-                    raise e
-                if i < 1 or i > 6:
-                    raise ValueError("Impossible die value %d" % i)
-                if buf_int is None:
-                    buf_int = i
-                    continue
-                assert buf_int is not None
-                yield buf_int + i
-                buf_int = None
-
-
-def roll_iter_into_counts(roll_iter):
-    counts = {}
-    for i in range(2, 12+1):
-        counts[i] = 0
-    for i in roll_iter:
-        counts[i] += 1
-    return counts
+def counts_from_input(fd):
+    d = json.load(fd, cls=NumericKeyDecoder)
+    return d['counts']
 
 
 def is_something_to_do(args):
@@ -84,8 +57,8 @@ def do_stats(out_fd, counts):
 
 
 def gen_parser(sub):
-    d = 'From either stdin or the given file, read the series of rolls '\
-        'that you had. Output a variety of information regarding the outcome.'
+    d = 'From either stdin or the given file, read json-formatted roll count '\
+        'data. Output a variety of information regarding the outcome.'
     p = sub.add_parser(
         'rollstats', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
@@ -102,7 +75,7 @@ def main(args, conf):
     if not is_something_to_do(args):
         log.error("Nothing to do")
         return 1
-    counts = roll_iter_into_counts(read_input_into_gen(args.input))
+    counts = counts_from_input(args.input)
     if args.statistics:
         do_stats(args.statistics, counts)
     return 0
