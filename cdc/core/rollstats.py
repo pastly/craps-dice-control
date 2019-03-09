@@ -11,6 +11,7 @@ MIN_ALLOWED_COUNT = 5
 
 
 def read_input_into_gen(fd):
+    buf_int = None
     for line in fd:
         line = line.strip()
         if not len(line):
@@ -18,13 +19,19 @@ def read_input_into_gen(fd):
         if line[0] == '#':
             continue
         for word in line.split():
-            try:
-                i = int(word)
-            except ValueError as e:
-                raise e
-            if i < 2 or i > 12:
-                raise ValueError("Impossible roll value %d" % i)
-            yield i
+            for c in word:
+                try:
+                    i = int(c)
+                except ValueError as e:
+                    raise e
+                if i < 1 or i > 6:
+                    raise ValueError("Impossible die value %d" % i)
+                if buf_int is None:
+                    buf_int = i
+                    continue
+                assert buf_int is not None
+                yield buf_int + i
+                buf_int = None
 
 
 def roll_iter_into_counts(roll_iter):
