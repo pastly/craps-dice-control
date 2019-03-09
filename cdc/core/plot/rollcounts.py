@@ -23,23 +23,22 @@ def read_input(fd):
 def validate_input_data(data):
     ''' Returns list of error strings if issues, otherwise None '''
     err = []
-    for dset in data:
-        for i in range(2, 12+1):
-            val = dset['counts'][i]
-            if val < 0:
-                err.append(
-                    'Count for %d cannot be negative (%d)' % (i, val))
-        for i in [4, 6, 8, 10]:
-            val = dset['counts'][i]
-            hard_val = dset['counts_hard'][i]
-            if hard_val < 0:
-                err.append(
-                    'Hard count for %d cannot be negative (%d)' %
-                    (i, hard_val))
-            if hard_val > val:
-                err.append(
-                    'Hard count cannot be greater than count for %d '
-                    '(%d > %d)' % (i, hard_val, val))
+    for i in range(2, 12+1):
+        val = data['counts'][i]
+        if val < 0:
+            err.append(
+                'Count for %d cannot be negative (%d)' % (i, val))
+    for i in [4, 6, 8, 10]:
+        val = data['counts'][i]
+        hard_val = data['counts_hard'][i]
+        if hard_val < 0:
+            err.append(
+                'Hard count for %d cannot be negative (%d)' %
+                (i, hard_val))
+        if hard_val > val:
+            err.append(
+                'Hard count cannot be greater than count for %d '
+                '(%d > %d)' % (i, hard_val, val))
     return err if len(err) else None
 
 
@@ -47,9 +46,9 @@ def plot(out_fd, data):
     colors = "krbgcmy"
     color_idx = 0
     ymax = 0
-    for dset in data:
-        label = dset['label']
-        counts = dset['counts']
+    for dset in [data]:
+        label = data['label']
+        counts = data['counts']
         num_rolls = sum(counts[i] for i in counts)
         points = []
         for i in range(2, 12+1):
