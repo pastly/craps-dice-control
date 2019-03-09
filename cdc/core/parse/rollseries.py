@@ -47,7 +47,8 @@ def do_counts(out_fd, input_pairs, label):
         d['counts'][s] += 1
         if pair[0] == pair[1] and s in {4, 6, 8, 10}:
             d['counts_hard'][s] += 1
-    json.dump(d, out_fd, indent=2)
+    json.dump(d, out_fd)
+    out_fd.write('\n')
     return 0
 
 

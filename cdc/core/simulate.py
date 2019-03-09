@@ -32,7 +32,9 @@ def do_roll_counts(out_fd, obs_counts, exp_counts=None):
             'counts': exp_counts,
             'counts_hard': {'4': 0, '6': 0, '8': 0, '10': 0},
         })
-    json.dump(j, out_fd, indent=2)
+    for item in j:
+        json.dump(item, out_fd)
+        out_fd.write('\n')
 
 
 def gen_parser(sub):

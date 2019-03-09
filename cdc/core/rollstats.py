@@ -55,7 +55,8 @@ def do_stats(out_fd, counts):
             'chisq': chisq,
             'p': p,
         },
-    }, out_fd, indent=2)
+    }, out_fd)
+    out_fd.write('\n')
 
 
 def gen_parser(sub):
