@@ -22,4 +22,4 @@ def main(args, conf):
     }
     assert args.plot_command in known_commands
     c = known_commands[args.plot_command]
-    exit(c['f'](*c['a'], **c['kw']))
+    return c['f'](*c['a'], **c['kw'])
