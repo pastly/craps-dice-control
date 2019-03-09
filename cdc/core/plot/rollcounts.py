@@ -79,7 +79,7 @@ def gen_parser(sub):
         '-i', '--input', type=FileType('rt'), default=sys.stdin,
         help='From where to read json-formatted data')
     p.add_argument(
-        '-o', '--output', type=FileType('wb'), default=sys.stdout,
+        '-o', '--output', type=FileType('wb'), default='/dev/stdout',
         help='File to which to write graph')
     return p
 
