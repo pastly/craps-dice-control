@@ -4,6 +4,11 @@ A roll series is a textual representation of a series of rolls.  It is simply
 an ordered series of pairs of integers representing the face values of the
 dice.
 
+This plain-text roll series should not be confused with a stream of json roll
+event objects that includes state such as when a point is established or
+whether the 7 that was rolled causes the point to be lost or is simply a
+natural.
+
 - Input **MUST** contain an even number of integers
 - Values **MUST** be between 1 and 6 inclusive
 - White space **MUST** be ignored
