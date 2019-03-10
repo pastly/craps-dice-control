@@ -72,7 +72,7 @@ def _event_craps(dice):
 
 
 def _event_point(dice, existing_point):
-    assert sum(dice) in {4, 5, 6, 8, 9, 10}
+    assert sum(dice) in {4, 5, 6, 7, 8, 9, 10}
     assert existing_point in {None, 4, 5, 6, 8, 9, 10}
     e = _event(
         'point', dice, {
