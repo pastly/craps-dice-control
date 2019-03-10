@@ -17,10 +17,10 @@ def roll_series_stream_to_dice_pairs(fd):
     '''
     buf_int = None
     for line in fd:
+        if '#' in line:
+            line = line[0:line.find('#')]
         line = line.strip()
         if not len(line):
-            continue
-        if line[0] == '#':
             continue
         for word in line.split():
             for c in word:

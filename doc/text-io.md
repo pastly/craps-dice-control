@@ -7,7 +7,7 @@ dice.
 - Input **MUST** contain an even number of integers
 - Values **MUST** be between 1 and 6 inclusive
 - White space **MUST** be ignored
-- Lines with `'#'` as the first non-white space character are comments and
+- Comments begin with a '#' character, extend to the end of the current line,
   **MUST** be ignored for the purposes of roll processing, and **MAY** be
 included in output in a reasonable way
 - Consumers **MAY** process input as a stream and error out in whatever
