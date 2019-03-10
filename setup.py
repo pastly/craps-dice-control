@@ -83,5 +83,6 @@ setup(
         'scipy',
     ],
     extras_require={
+        'test': ['tox', 'pytest', 'coverage'],
     },
 )
