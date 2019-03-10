@@ -8,7 +8,13 @@ from ...lib.argparse import TryAppendFileType
 log = logging.getLogger(__name__)
 
 
-def read_input_into_gen(fd):
+def roll_series_stream_to_dice_pairs(fd):
+    ''' Turn the input plain-text-formatted roll series data into a generator
+    producing pairs of dice values.
+
+    Input: 33425316
+    Output (as a generator): (3, 3), (4, 2), (5, 3), (1, 6)
+    '''
     buf_int = None
     for line in fd:
         line = line.strip()
@@ -81,14 +87,24 @@ def _event_point(dice, existing_point):
             'is_lost': True if sum(dice) == 7 else False,
         })
     assert len(list(filter(None, e['args'].values()))) == 1
+    return e
 
 
 def _event_roll(dice):
     return _event('roll', dice, {})
 
 
-def event_gen(input_pairs):
-    point = None
+def dice_pairs_gen_to_events(input_pairs, starting_point=None):
+    ''' Take a generator of pairs of dice, and parse them into craps game
+    events. Optionally take a starting point value.
+
+    Input (as generator): (1, 2), (2, 3), (6, 3)
+    Output (as generator): {'type': 'craps', ...},
+                           {'type': 'point', ...},
+                           {'type': 'roll', ...},
+    '''
+    assert starting_point in {None, 4, 5, 6, 8, 9, 10}
+    point = starting_point
     for pair in input_pairs:
         s = sum(pair)
         if point is None:
@@ -111,7 +127,7 @@ def event_gen(input_pairs):
 def do_chrono(out_fd, input_pairs, label):
     json.dump({
         'label': label,
-        'events': list(event_gen(input_pairs)),
+        'events': list(dice_pairs_gen_to_events(input_pairs)),
     }, out_fd)
     out_fd.write('\n')
     return 0
@@ -140,7 +156,7 @@ def gen_parser(sub):
 def main(args, conf):
     if args.label and args.out_format not in {'counts'}:
         log.warn('Input label "%s" will be ignored', args.label)
-    data = read_input_into_gen(args.input)
+    data = roll_series_stream_to_dice_pairs(args.input)
     if args.out_format == 'counts':
         return do_counts(args.output, data, args.label)
     elif args.out_format == 'chrono':
