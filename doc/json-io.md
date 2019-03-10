@@ -26,7 +26,7 @@ a perfectly fair distribution would not output perfectly fair data.
 
 **Producers**: `simulate`, `parse rollseries`
 
-**Consumers**: `plot`
+**Consumers**: `plot rollcounts`
 
 ## Schema
 
