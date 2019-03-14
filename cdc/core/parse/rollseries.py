@@ -8,6 +8,10 @@ from ...lib.argparse import TryAppendFileType
 log = logging.getLogger(__name__)
 
 
+class IncompleteRollSeriesError(ValueError):
+    pass
+
+
 def roll_series_stream_to_dice_pairs(fd):
     ''' Turn the input plain-text-formatted roll series data into a generator
     producing pairs of dice values.
@@ -36,6 +40,8 @@ def roll_series_stream_to_dice_pairs(fd):
                 assert buf_int is not None
                 yield (buf_int, i)
                 buf_int = None
+    if buf_int:
+        raise IncompleteRollSeriesError
 
 
 def do_counts(out_fd, input_pairs, label):

@@ -4,6 +4,13 @@ import pytest
 from cdc.core.parse import rollseries as rs
 
 
+def assert_unreached(msg=None):
+    if msg:
+        assert False, msg
+    else:
+        assert False, "Unreachable code path was reached"
+
+
 def event_gen_from_str(s, starting_point=None):
     fd = io.StringIO(s)
     pair_gen = rs.roll_series_stream_to_dice_pairs(fd)
@@ -123,3 +130,13 @@ def test_simple_no_events_2():
 def test_simple_no_events_3():
     event_gen = event_gen_from_str("  \n #  12  ")
     assert not len(list(event_gen))
+
+
+def test_odd_num_dice():
+    event_gen = event_gen_from_str("666")
+    try:
+        list(event_gen)
+    except rs.IncompleteRollSeriesError:
+        pass
+    else:
+        assert_unreached()
