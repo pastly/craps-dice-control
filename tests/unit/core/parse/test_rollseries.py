@@ -140,3 +140,23 @@ def test_odd_num_dice():
         pass
     else:
         assert_unreached()
+
+
+def test_impossible_die_value_1():
+    event_gen = event_gen_from_str("7")
+    try:
+        list(event_gen)
+    except rs.ImpossibleDieValueError:
+        pass
+    else:
+        assert_unreached()
+
+
+def test_impossible_die_value_2():
+    event_gen = event_gen_from_str("0")
+    try:
+        list(event_gen)
+    except rs.ImpossibleDieValueError:
+        pass
+    else:
+        assert_unreached()

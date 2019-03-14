@@ -12,6 +12,10 @@ class IncompleteRollSeriesError(ValueError):
     pass
 
 
+class ImpossibleDieValueError(ValueError):
+    pass
+
+
 def roll_series_stream_to_dice_pairs(fd):
     ''' Turn the input plain-text-formatted roll series data into a generator
     producing pairs of dice values.
@@ -33,7 +37,8 @@ def roll_series_stream_to_dice_pairs(fd):
                 except ValueError as e:
                     raise e
                 if i < 1 or i > 6:
-                    raise ValueError("Impossible die value %d" % i)
+                    raise ImpossibleDieValueError(
+                        "Impossible die value %d" % i)
                 if buf_int is None:
                     buf_int = i
                     continue
