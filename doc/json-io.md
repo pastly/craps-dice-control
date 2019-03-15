@@ -1,4 +1,4 @@
-# Roll Counts
+# Roll Counts (Remove this)
 
 - All `counts` **MUST** be non-negative
 - All `counts_hard` **MUST** be non-negative
@@ -24,7 +24,7 @@ a perfectly fair distribution would not output perfectly fair data.
 
 ## Producers/Consumers
 
-**Producers**: `simulate`, `parse rollseries`
+**Producers**: `simulate`
 
 **Consumers**: `plot rollcounts`
 
