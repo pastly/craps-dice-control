@@ -50,26 +50,6 @@ def roll_series_stream_to_dice_pairs(fd):
         raise IncompleteRollSeriesError
 
 
-def do_counts(out_fd, input_pairs, label):
-    d = {
-        'label': label,
-        'counts': {},
-        'counts_hard': {},
-    }
-    for i in range(2, 12+1):
-        d['counts'][i] = 0
-    for i in {4, 6, 8, 10}:
-        d['counts_hard'][i] = 0
-    for pair in input_pairs:
-        s = sum(pair)
-        d['counts'][s] += 1
-        if pair[0] == pair[1] and s in {4, 6, 8, 10}:
-            d['counts_hard'][s] += 1
-    json.dump(d, out_fd)
-    out_fd.write('\n')
-    return 0
-
-
 def _event(type_, dice, args):
     return RollEvent(type_, dice, args)
 
@@ -131,12 +111,10 @@ def dice_pairs_gen_to_events(input_pairs, starting_point=None):
                 yield _event_roll(pair)
 
 
-def do_chrono(out_fd, input_pairs, label):
-    json.dump({
-        'label': label,
-        'events': list(dice_pairs_gen_to_events(input_pairs)),
-    }, out_fd)
-    out_fd.write('\n')
+def do_stream(out_fd, roll_events):
+    for ev in roll_events:
+        json.dump(ev.to_dict(), out_fd)
+        out_fd.write('\n')
     return 0
 
 
@@ -153,20 +131,15 @@ def gen_parser(sub):
         '-o', '--output', type=TryAppendFileType('at'), default=sys.stdout,
         help='File to which to write data. Will append to end, if possible.')
     p.add_argument(
-        '-f', '--out-format', choices=('counts', 'chrono'), required=True)
-    p.add_argument(
-        '--label', type=str, default=None,
-        help='Add this label to the output data for supported output formats')
+        '-f', '--out-format', required=True,
+        choices=('stream'))
     return p
 
 
 def main(args, conf):
-    if args.label and args.out_format not in {'counts'}:
-        log.warn('Input label "%s" will be ignored', args.label)
-    data = roll_series_stream_to_dice_pairs(args.input)
-    if args.out_format == 'counts':
-        return do_counts(args.output, data, args.label)
-    elif args.out_format == 'chrono':
-        return do_chrono(args.output, data, args.label)
+    roll_events = dice_pairs_gen_to_events(
+        roll_series_stream_to_dice_pairs(args.input))
+    if args.out_format == 'stream':
+        return do_stream(args.output, roll_events)
     log.error('Unknown --out-format %s', args.out_format)
     return 1

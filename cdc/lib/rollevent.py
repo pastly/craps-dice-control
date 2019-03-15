@@ -31,3 +31,8 @@ class RollEvent:
     @property
     def args(self):
         return self._args
+
+    def __eq__(self, other):
+        return self.type == other.type and \
+            list(self.dice) == list(other.dice) and \
+            self.args == other.args

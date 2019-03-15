@@ -1,7 +1,9 @@
 import io
+import json
 import pytest
 
 from cdc.core.parse import rollseries as rs
+from cdc.lib.rollevent import RollEvent
 
 
 def assert_unreached(msg=None):
@@ -160,3 +162,17 @@ def test_impossible_die_value_2():
         pass
     else:
         assert_unreached()
+
+
+def test_stream_identity():
+    # An event string with all types of events, and all possible flags set on
+    # point events
+    ev_str = "11343366242616"
+    out_fd = io.StringIO()
+    expected_events = [_ for _ in event_gen_from_str(ev_str)]
+    rs.do_stream(out_fd, event_gen_from_str(ev_str))
+    actual_events = []
+    for line in filter(None, out_fd.getvalue().split('\n')):
+        actual_events.append(RollEvent.from_dict(json.loads(line)))
+    for a, b in zip(expected_events, actual_events):
+        assert a == b
