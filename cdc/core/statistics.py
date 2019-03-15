@@ -1,6 +1,4 @@
 from ..util import stats
-from ..util.json import NumericKeyDecoder
-from ..lib.argparse import TryAppendFileType
 
 from argparse import ArgumentDefaultsHelpFormatter, FileType
 import json
@@ -13,19 +11,9 @@ log = logging.getLogger(__name__)
 MIN_ALLOWED_COUNT = 5
 
 
-def counts_from_input(fd):
-    d = json.load(fd, cls=NumericKeyDecoder)
-    return d['counts']
-
-
-def is_something_to_do(args):
-    possible_desired_outputs = [
-        args.statistics,
-    ]
-    for out in possible_desired_outputs:
-        if out:
-            return True
-    return False
+def roll_events_from_input(fd):
+    for line in fd:
+        yield json.loads(line)
 
 
 def do_stats(out_fd, counts):
@@ -59,26 +47,39 @@ def do_stats(out_fd, counts):
     out_fd.write('\n')
 
 
+def calculate_all_statistics(roll_events):
+    points_won, points_lost = 0, 0
+    hards = {4: 0, 6: 0, 8: 0, 10: 0,}
+    for ev in roll_events:
+        if ev['type'] == 'point':
+            if ev['args']['is_won']:
+                points_won += 1
+            elif ev['args']['is_lost']:
+                points_lost += 1
+            if ev['value'] in {4, 6, 8, 10} and ev['dice'][0] == ev['dice'][1]:
+                hards[ev['value']] += 1
+    return {
+        'points': {'won': points_won, 'lost': points_lost, },
+        'hards': hards,
+    }
+
+
 def gen_parser(sub):
-    d = 'From either stdin or the given file, read json-formatted roll count '\
+    d = 'From either stdin or the given file, read json-formatted roll event '\
         'data. Output a variety of information regarding the outcome.'
     p = sub.add_parser(
-        'rollstats', description=d,
+        'statistics', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
     p.add_argument(
         '-i', '--input', type=FileType('rt'), default=sys.stdin,
-        help='From where to read roll data')
+        help='From where to read roll events, one per line')
     p.add_argument(
-        '--statistics', type=TryAppendFileType('at'),
-        help='Where to write json-formatted statistical information about '
-        'rolls. Will append to end, if possible.')
+        '-o', '--output', type=FileType('wt'), default=sys.stdout,
+        help='File to which to write data')
 
 
 def main(args, conf):
-    if not is_something_to_do(args):
-        log.error("Nothing to do")
-        return 1
-    counts = counts_from_input(args.input)
-    if args.statistics:
-        do_stats(args.statistics, counts)
+    stats = calculate_all_statistics(roll_events_from_input(args.input))
+    json.dump(stats, args.output)
+    args.output.write('\n')
     return 0

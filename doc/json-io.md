@@ -116,7 +116,7 @@ roll series that simply indicates dice values with no extra information.
 
 **Producers**: `parse rollseries`
 
-**Consumers**:
+**Consumers**: `statistics`
 
 
 ## Examples
