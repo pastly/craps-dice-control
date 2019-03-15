@@ -132,7 +132,7 @@ def gen_parser(sub):
         help='File to which to write data. Will append to end, if possible.')
     p.add_argument(
         '-f', '--out-format', required=True,
-        choices=('stream'))
+        choices=('stream',))
     return p
 
 
