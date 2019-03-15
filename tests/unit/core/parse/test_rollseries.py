@@ -20,10 +20,10 @@ def event_gen_from_str(s, starting_point=None):
 
 
 def assert_dice_event(event, type_, dice, args):
-    assert event['type'] == type_
-    assert event['dice'] == dice
-    assert event['value'] == sum(dice)
-    assert event['args'] == args
+    assert event.type == type_
+    assert event.dice == dice
+    assert event.value == sum(dice)
+    assert event.args == args
 
 
 def test_simple_roll():

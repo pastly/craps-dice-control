@@ -4,6 +4,7 @@ import json
 import sys
 
 from ...lib.argparse import TryAppendFileType
+from ...lib.rollevent import RollEvent
 
 log = logging.getLogger(__name__)
 
@@ -70,12 +71,7 @@ def do_counts(out_fd, input_pairs, label):
 
 
 def _event(type_, dice, args):
-    return {
-        'type': type_,
-        'dice': dice,
-        'value': sum(dice),
-        'args': args,
-    }
+    return RollEvent(type_, dice, args)
 
 
 def _event_natural(dice):
@@ -97,7 +93,7 @@ def _event_point(dice, existing_point):
             'is_won': True if existing_point == sum(dice) else False,
             'is_lost': True if sum(dice) == 7 else False,
         })
-    assert len(list(filter(None, e['args'].values()))) == 1
+    assert len(list(filter(None, e.args.values()))) == 1
     return e
 
 
