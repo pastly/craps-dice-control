@@ -109,14 +109,14 @@ def test_simple_bad_die_1():
     event_gen = event_gen_from_str("71")
     with pytest.raises(ValueError) as ex_info:
         list(event_gen)[0]
-    assert 'Impossible die value 7' in str(ex_info)
+    assert 'ImpossibleDieValueError: 7' in str(ex_info)
 
 
 def test_simple_bad_die_2():
     event_gen = event_gen_from_str(".1")
     with pytest.raises(ValueError) as ex_info:
         list(event_gen)[0]
-    assert 'invalid literal' in str(ex_info)
+    assert 'ImpossibleDieValueError: .' in str(ex_info)
 
 
 def test_simple_no_events_1():
@@ -156,6 +156,16 @@ def test_impossible_die_value_1():
 
 def test_impossible_die_value_2():
     event_gen = event_gen_from_str("0")
+    try:
+        list(event_gen)
+    except rs.ImpossibleDieValueError:
+        pass
+    else:
+        assert_unreached()
+
+
+def test_impossible_die_value_nonint():
+    event_gen = event_gen_from_str("q")
     try:
         list(event_gen)
     except rs.ImpossibleDieValueError:

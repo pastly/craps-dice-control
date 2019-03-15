@@ -35,11 +35,10 @@ def roll_series_stream_to_dice_pairs(fd):
             for c in word:
                 try:
                     i = int(c)
-                except ValueError as e:
-                    raise e
+                except ValueError:
+                    raise ImpossibleDieValueError(c)
                 if i < 1 or i > 6:
-                    raise ImpossibleDieValueError(
-                        "Impossible die value %d" % i)
+                    raise ImpossibleDieValueError(i)
                 if buf_int is None:
                     buf_int = i
                     continue
