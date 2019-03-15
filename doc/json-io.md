@@ -101,7 +101,9 @@ roll series that simply indicates dice values with no extra information.
    1. `'is_established': bool
    2.  'is_won': bool
    3.  'is_lost': bool
+   4.  'point_value': int
 - The `args` object for `type` 'point' **MUST** contain exactly 1 `True` flag.
+- `args.point_value` **MUST** be 4, 5, 6, 8, 9, or 10.
 
 ## Schema
 
@@ -143,16 +145,18 @@ roll series that simply indicates dice values with no extra information.
             'is_established': True,
             'is_won': False,
             'is_lost': False,
+            'point_value': 4,
         },
     }
 
     {
         'type': point,
-        'dice': (6, 3),
-        'value': 9,
+        'dice': (2, 5),
+        'value': 7,
         'args': {
             'is_established': False,
             'is_won': False,
             'is_lost': True,
+            'point_value': 5,
         },
     }

@@ -71,8 +71,17 @@ def _event_point(dice, existing_point):
             'is_established': True if existing_point is None else False,
             'is_won': True if existing_point == sum(dice) else False,
             'is_lost': True if sum(dice) == 7 else False,
+            'point_value': sum(dice) if not existing_point else existing_point,
         })
-    assert len(list(filter(None, e.args.values()))) == 1
+    # only one flag set
+    assert sum(int(e.args[a])
+               for a in {'is_established', 'is_won', 'is_lost'}) == 1
+    # value must match existing_point if is_established or is_won, otherwise
+    # must not match
+    if e.args['is_established'] or e.args['is_won']:
+        assert e.args['point_value'] == e.value
+    else:
+        assert e.args['point_value'] != e.value
     return e
 
 

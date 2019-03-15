@@ -58,6 +58,7 @@ def test_simple_point_established():
         'is_established': True,
         'is_won': False,
         'is_lost': False,
+        'point_value': 8,
     })
 
 
@@ -68,6 +69,7 @@ def test_simple_point_won():
         'is_established': False,
         'is_won': True,
         'is_lost': False,
+        'point_value': 8,
     })
 
 
@@ -78,6 +80,7 @@ def test_simple_point_lost():
         'is_established': False,
         'is_won': False,
         'is_lost': True,
+        'point_value': 8,
     })
 
 
