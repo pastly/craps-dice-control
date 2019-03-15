@@ -84,5 +84,6 @@ setup(
     ],
     extras_require={
         'test': ['tox', 'pytest', 'coverage'],
+        'dev': ['flake8', 'vulture'],
     },
 )
