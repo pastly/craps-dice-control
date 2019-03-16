@@ -1,0 +1,1 @@
+{"type": "natural", "dice": [1, 6], "value": 7, "args": {}}

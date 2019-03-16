@@ -1,0 +1,1 @@
+{"type": "point", "dice": [2, 6], "value": 8, "args": {"is_established": true, "is_won": false, "is_lost": false, "point_value": 8}}

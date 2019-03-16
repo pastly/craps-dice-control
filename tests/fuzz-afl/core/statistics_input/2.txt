@@ -1,0 +1,1 @@
+{"type": "roll", "dice": [3, 6], "value": 9, "args": {}}

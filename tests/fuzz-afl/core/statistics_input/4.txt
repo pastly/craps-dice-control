@@ -1,0 +1,1 @@
+{"type": "craps", "dice": [1, 1], "value": 2, "args": {}}
