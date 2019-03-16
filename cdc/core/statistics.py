@@ -1,3 +1,4 @@
+from ..lib.rollevent import RollEvent
 from ..util import stats
 
 from argparse import ArgumentDefaultsHelpFormatter, FileType
@@ -13,7 +14,7 @@ MIN_ALLOWED_COUNT = 5
 
 def roll_events_from_input(fd):
     for line in fd:
-        yield json.loads(line)
+        yield RollEvent.from_dict(json.loads(line))
 
 
 def do_stats(out_fd, counts):
@@ -48,19 +49,44 @@ def do_stats(out_fd, counts):
 
 
 def calculate_all_statistics(roll_events):
-    points_won, points_lost = 0, 0
-    hards = {4: 0, 6: 0, 8: 0, 10: 0,}
+    points = {
+        'won': {
+            4: 0, 5: 0, 6: 0, 8: 0, 9: 0, 10: 0,
+        },
+        'lost': {
+            4: 0, 5: 0, 6: 0, 8: 0, 9: 0, 10: 0,
+        },
+        'established': {
+            4: 0, 5: 0, 6: 0, 8: 0, 9: 0, 10: 0,
+        },
+    }
+    hards = {4: 0, 6: 0, 8: 0, 10: 0}
+    craps = {2: 0, 3: 0, 12: 0}
+    naturals = {7: 0, 11: 0}
+    counts = {}
+    for i in range(2, 12+1):
+        counts[i] = 0
     for ev in roll_events:
-        if ev['type'] == 'point':
-            if ev['args']['is_won']:
-                points_won += 1
-            elif ev['args']['is_lost']:
-                points_lost += 1
-            if ev['value'] in {4, 6, 8, 10} and ev['dice'][0] == ev['dice'][1]:
-                hards[ev['value']] += 1
+        if ev.type == 'point':
+            if ev.args['is_won']:
+                points['won'][ev.value] += 1
+            elif ev.args['is_lost']:
+                points['lost'][ev.args['point_value']] += 1
+            else:
+                points['established'][ev.value] += 1
+        elif ev.type == 'craps':
+            craps[ev.value] += 1
+        elif ev.type == 'natural':
+            naturals[ev.value] += 1
+        if ev.value in {4, 6, 8, 10} and ev.dice[0] == ev.dice[1]:
+            hards[ev.value] += 1
+        counts[ev.value] += 1
     return {
-        'points': {'won': points_won, 'lost': points_lost, },
-        'hards': hards,
+        'points': points,
+        'craps': craps,
+        'naturals': naturals,
+        'counts_hard': hards,
+        'counts': counts,
     }
 
 
