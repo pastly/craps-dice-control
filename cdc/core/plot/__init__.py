@@ -1,4 +1,4 @@
-from . import rollcounts
+from . import pdf
 
 from argparse import ArgumentDefaultsHelpFormatter
 
@@ -10,7 +10,7 @@ def gen_parser(sub):
         'plot', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
     sub = p.add_subparsers(dest='plot_command', required=True)
-    rollcounts.gen_parser(sub)
+    pdf.gen_parser(sub)
     return p
 
 
@@ -18,7 +18,7 @@ def main(args, conf):
     def_args = [args, conf]
     def_kwargs = {}
     known_commands = {
-        'rollcounts': {'f': rollcounts.main, 'a': def_args, 'kw': def_kwargs},
+        'pdf': {'f': pdf.main, 'a': def_args, 'kw': def_kwargs},
     }
     assert args.plot_command in known_commands
     c = known_commands[args.plot_command]

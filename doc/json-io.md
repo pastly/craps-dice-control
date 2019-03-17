@@ -26,7 +26,7 @@ a perfectly fair distribution would not output perfectly fair data.
 
 **Producers**: `simulate`
 
-**Consumers**: `plot rollcounts`
+**Consumers**:
 
 ## Schema
 
@@ -118,7 +118,7 @@ roll series that simply indicates dice values with no extra information.
 
 **Producers**: `parse rollseries`
 
-**Consumers**: `statistics`
+**Consumers**: `statistics`, `plot pdf`
 
 
 ## Examples
