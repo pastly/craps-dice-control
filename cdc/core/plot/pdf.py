@@ -111,7 +111,7 @@ def plot(out_fd, data_set, add_expected=False):
     plt.xlabel('Roll')
     plt.ylabel('Probability (fraction of 1)')
     plt.title('Roll Probability Density Function over %d rolls' % num_rolls)
-    plt.savefig(out_fd)
+    plt.savefig(out_fd, transparent=True)
 
 
 def gen_parser(sub):
