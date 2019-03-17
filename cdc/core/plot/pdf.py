@@ -78,9 +78,9 @@ def plot(out_fd, data_set, add_expected=False):
         }
     '''
     ymax = 0
-    data_sets = list(data_set)
+    data_sets = [data_set]
     if add_expected:
-        _, counts, _ = data_sets[0]
+        _, counts, _ = data_set
         num_rolls = sum(counts[i] for i in counts)
         data_sets.append((EXPECTED_LABEL, *make_expected_counts(num_rolls)))
     assert len(data_sets) in {1, 2}
@@ -135,10 +135,8 @@ def gen_parser(sub):
 
 
 def main(args, conf):
-    data_sets = []
     roll_events = roll_events_from_input(args.input)
     counts, hards = make_counts(roll_events)
     label = args.label or 'Actual'
-    data_sets.append((label, counts, hards))
-    plot(args.output, data_sets, args.with_expected)
+    plot(args.output, (label, counts, hards), args.with_expected)
     return 0
