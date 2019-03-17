@@ -63,9 +63,9 @@ def calculate_all_statistics(roll_events):
     hards = {4: 0, 6: 0, 8: 0, 10: 0}
     craps = {2: 0, 3: 0, 12: 0}
     naturals = {7: 0, 11: 0}
-    counts = {}
-    for i in range(2, 12+1):
-        counts[i] = 0
+    counts = {i: 0 for i in range(2, 12+1)}
+    dice = {i: 0 for i in range(1, 6+1)}
+    pairs = {(i, j): 0 for i in range(1, 6+1) for j in range(i, 6+1)}
     for ev in roll_events:
         if ev.type == 'point':
             if ev.args['is_won']:
@@ -81,12 +81,20 @@ def calculate_all_statistics(roll_events):
         if ev.value in {4, 6, 8, 10} and ev.dice[0] == ev.dice[1]:
             hards[ev.value] += 1
         counts[ev.value] += 1
+        dice[ev.dice[0]] += 1
+        dice[ev.dice[1]] += 1
+        if ev.dice[0] <= ev.dice[1]:
+            pairs[(ev.dice[0], ev.dice[1])] += 1
+        else:
+            pairs[(ev.dice[1], ev.dice[0])] += 1
     return {
         'points': points,
         'craps': craps,
         'naturals': naturals,
         'counts_hard': hards,
         'counts': counts,
+        'counts_dice': dice,
+        'counts_pairs': pairs,
     }
 
 

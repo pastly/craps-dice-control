@@ -25,6 +25,8 @@ def test_statistics():  # noqa: C901
         craps = {2: 0, 3: 0, 12: 0}
         naturals = {7: 0, 11: 0}
         counts = {i: 0 for i in range(2, 12+1)}
+        dice = {i: 0 for i in range(1, 6+1)}
+        pairs = {(i, j): 0 for i in range(1, 6+1) for j in range(i, 6+1)}
 
         point = None
         evs = list(
@@ -34,6 +36,12 @@ def test_statistics():  # noqa: C901
             assert e.type in {'roll', 'point', 'craps', 'natural'}
             assert sum(e.dice) == e.value
             counts[e.value] += 1
+            dice[e.dice[0]] += 1
+            dice[e.dice[1]] += 1
+            if e.dice[0] <= e.dice[1]:
+                pairs[(e.dice[0], e.dice[1])] += 1
+            else:
+                pairs[(e.dice[1], e.dice[0])] += 1
             if e.dice[0] == e.dice[1] and e.value in {4, 6, 8, 10}:
                 hards[e.value] += 1
             if e.type == 'craps':
@@ -78,6 +86,8 @@ def test_statistics():  # noqa: C901
             'naturals': naturals,
             'counts_hard': hards,
             'counts': counts,
+            'counts_pairs': pairs,
+            'counts_dice': dice,
         }
         for i in {4, 6, 8, 10}:
             assert hards[i] <= counts[i]
