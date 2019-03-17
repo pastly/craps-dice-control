@@ -14,6 +14,9 @@ plt.rcParams.update({
     'savefig.format': 'png',
 })
 log = logging.getLogger(__name__)
+EXPECTED_LABEL = 'Expected'
+BAR_WIDTH_SINGLE = 0.5
+BAR_WIDTH_DOUBLE = 0.4
 
 
 def roll_events_from_input(fd):
@@ -54,12 +57,38 @@ def make_expected_counts(num_rolls):
     return counts, hards
 
 
-def plot(out_fd, data_sets):
-    colors = "krbgcmy"
-    color_idx = 0
+def plot(out_fd, data_set, add_expected=False):
+    ''' Plot a bar chart Probability Density Function based on the input data.
+
+    out_fd: the file-like object to which to write the graph in PNG file format
+    data_set: a tuple, containing:
+        label: string to label this data in the graph
+        counts: a dictionary with the number of times each value was rolled
+        hards: (ignored) a dictionary with the number of times each hardway was
+               rolled
+    add_expected: if true, also plot what the perfectly fair outcome
+
+    The counts dictionary should look like this:
+        {
+            2: 0,
+            3: 5,
+            4: 11,
+            ...
+            12: 1,
+        }
+    '''
     ymax = 0
-    for label, counts, hards in data_sets:
+    data_sets = list(data_set)
+    if add_expected:
+        _, counts, _ = data_sets[0]
         num_rolls = sum(counts[i] for i in counts)
+        data_sets.append((EXPECTED_LABEL, *make_expected_counts(num_rolls)))
+    assert len(data_sets) in {1, 2}
+    bar_width = BAR_WIDTH_DOUBLE if len(data_sets) == 2 else BAR_WIDTH_SINGLE
+    num_rolls = None
+    for label, counts, hards in data_sets:
+        if num_rolls is None and label != EXPECTED_LABEL:
+            num_rolls = sum(counts[i] for i in counts)
         points = []
         for i in range(2, 12+1):
             y = counts[i]/num_rolls
@@ -67,15 +96,20 @@ def plot(out_fd, data_sets):
                 ymax = y
             points.append((i, y))
         xs, ys = zip(*points)
-        plt.plot(xs, ys, label=label, c=colors[color_idx])
-        color_idx += 1
+        if len(data_sets) == 2 and label != EXPECTED_LABEL:
+            xs = [x-bar_width/2 for x in xs]
+        elif len(data_sets) == 2:
+            xs = [x+bar_width/2 for x in xs]
+        plt.bar(xs, ys, bar_width, label=label)
+    assert num_rolls is not None
     ymax = round(ymax*1.1, 2)
     plt.legend(loc='best')
-    plt.xlim(left=2, right=12)
+    plt.xlim(left=2-BAR_WIDTH_SINGLE, right=12+BAR_WIDTH_SINGLE)
     plt.ylim(bottom=0, top=ymax)
+    plt.xticks(range(2, 12+1))
     plt.xlabel('Roll')
     plt.ylabel('Probability (fraction of 1)')
-    plt.title('Roll Probability Density Function')
+    plt.title('Roll Probability Density Function over %d rolls' % num_rolls)
     plt.savefig(out_fd)
 
 
@@ -104,11 +138,7 @@ def main(args, conf):
     data_sets = []
     roll_events = roll_events_from_input(args.input)
     counts, hards = make_counts(roll_events)
-    label = args.label or 'foo'
+    label = args.label or 'Actual'
     data_sets.append((label, counts, hards))
-    if args.with_expected:
-        data_sets.append((
-            'Expected', *make_expected_counts(
-                sum(counts[i] for i in counts))))
-    plot(args.output, data_sets)
+    plot(args.output, data_sets, args.with_expected)
     return 0
