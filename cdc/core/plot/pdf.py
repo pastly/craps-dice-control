@@ -77,6 +77,7 @@ def plot(out_fd, data_set, add_expected=False):
             12: 1,
         }
     '''
+    plt.figure()
     ymax = 0
     data_sets = [data_set]
     if add_expected:
