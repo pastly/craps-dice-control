@@ -102,7 +102,7 @@ def plot(out_fd, data_set, add_expected=False):
             xs = [x+bar_width/2 for x in xs]
         plt.bar(xs, ys, bar_width, label=label)
     assert num_rolls is not None
-    ymax = round(ymax*1.1, 2)
+    ymax = min(1, round(ymax*1.1, 2))
     plt.legend(loc='best')
     plt.xlim(left=2-BAR_WIDTH_SINGLE, right=12+BAR_WIDTH_SINGLE)
     plt.ylim(bottom=0, top=ymax)
