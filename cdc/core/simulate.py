@@ -1,74 +1,76 @@
-from ..util import stats
-from ..lib.argparse import BoundedInt, TryAppendFileType
-from .. import globals as G
+from ..lib.argparse import BoundedInt
+from ..util.json import NumericKeyDecoder
+from ..util.rand import roll_die_with_weights
 
-from argparse import ArgumentDefaultsHelpFormatter
+from argparse import ArgumentDefaultsHelpFormatter, FileType
+from datetime import datetime
 import json
 import logging
+import sys
 
 log = logging.getLogger(__name__)
 
 
-def is_something_to_do(args):
-    possible_desired_outputs = [
-        args.roll_counts,
-    ]
-    for out in possible_desired_outputs:
-        if out:
-            return True
-    return False
+# Split a list into batches of size n
+# https://stackoverflow.com/q/8290397
+def _batch(iterable, n=1):
+    current_batch = []
+    for item in iterable:
+        current_batch.append(item)
+        if len(current_batch) == n:
+            yield current_batch
+            current_batch = []
+    if current_batch:
+        yield current_batch
 
 
-def do_roll_counts(out_fd, obs_counts, exp_counts=None):
-    j = []
-    j.append({
-        'label': 'Simulated',
-        'counts': obs_counts,
-        'counts_hard': {'4': 0, '6': 0, '8': 0, '10': 0},
-    })
-    if exp_counts:
-        j.append({
-            'label': 'Expected',
-            'counts': exp_counts,
-            'counts_hard': {'4': 0, '6': 0, '8': 0, '10': 0},
-        })
-    for item in j:
-        json.dump(item, out_fd)
-        out_fd.write('\n')
+def _calc_die_weights(stats):
+    weights = stats['counts_dice']
+    for i in range(1, 6+1):
+        assert i in weights
+        assert isinstance(weights[i], int) or isinstance(weights[i], float)
+    return [v for v in weights.values()]
+
+
+def _roll_dice_repeatedly(weights, times):
+    for _ in range(times):
+        yield roll_die_with_weights(weights), roll_die_with_weights(weights)
+
+
+def do_rollseries(args, stats):
+    weights = _calc_die_weights(stats)
+    header = '## cdc simluation run at %s\n'\
+        '## simulating %d dice rolls\n'\
+        '## weights: %s\n' % (datetime.now(), args.iterations, weights)
+    args.output.write(header)
+    for batch in _batch(_roll_dice_repeatedly(weights, args.iterations), n=20):
+        s = ' '.join(str(pair[0])+str(pair[1]) for pair in batch)
+        args.output.write('%s\n' % s)
 
 
 def gen_parser(sub):
-    d = 'Give a list of the relative odds for each of the 11 possible '\
-        'outcomes of rolling a pair of 6-sided dice. Simulates rolling '\
-        'dice with the provided outcome weights, and then outputs a variety '\
-        'of information regarding the outcome.'
+    d = 'As input, provide the output of the "cdc statistics" command. '\
+        'Simulate a bunch of dice rolls using the probabilities calculated '\
+        'from the input statistics. Outputs something about the simulation '\
+        'based on what you ask for.'
     p = sub.add_parser(
         'simulate', description=d,
         formatter_class=ArgumentDefaultsHelpFormatter)
     p.add_argument(
-        'distribution', type=float, nargs=11, metavar='D', default=G.FAIR_DIST,
-        help='The likelyhood of rolling 2, 3, 4, ... 12')
+        '-i', '--input', type=FileType('rt'), default=sys.stdin,
+        help='From where to read statistics')
     p.add_argument(
-        '-i', '--iterations', type=BoundedInt(1, None), default=100000,
+        '-o', '--output', type=FileType('wt'), default=sys.stdout,
+        help='To where to write output')
+    p.add_argument(
+        '-f', '--out-format', required=True,
+        choices=('rollseries',))
+    p.add_argument(
+        '--iterations', type=BoundedInt(1, None), default=100000,
         help='How many time to roll the dice using the given probabilities')
-    p.add_argument(
-        '--roll-counts', type=TryAppendFileType('at'),
-        help='File to write json-formatted roll count data')
-    p.add_argument(
-        '--with-fair-distribution', action='store_true',
-        help='When given, also simulate and output fair dice')
 
 
 def main(args, conf):
-    if not is_something_to_do(args):
-        log.error("Nothing to do")
-        return 1
-    log.warn('We do not currently support plotting anything about hard ways')
-    obs_counts = stats.simulate_roll_distribution(
-        args.iterations, args.distribution)
-    exp_counts = None
-    if args.with_fair_distribution:
-        exp_counts = stats.theoretical_fair_distribution(args.iterations)
-    if args.roll_counts:
-        do_roll_counts(args.roll_counts, obs_counts, exp_counts)
-    return 0
+    stats = json.load(args.input, cls=NumericKeyDecoder)
+    assert args.out_format == 'rollseries'
+    return do_rollseries(args, stats)
