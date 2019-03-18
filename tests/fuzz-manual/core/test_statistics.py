@@ -26,7 +26,7 @@ def test_statistics():  # noqa: C901
         naturals = {7: 0, 11: 0}
         counts = {i: 0 for i in range(2, 12+1)}
         dice = {i: 0 for i in range(1, 6+1)}
-        pairs = {(i, j): 0 for i in range(1, 6+1) for j in range(i, 6+1)}
+        pairs = {i: {j: 0 for j in range(i, 6+1)} for i in range(1, 6+1)}
 
         point = None
         evs = list(
@@ -39,9 +39,9 @@ def test_statistics():  # noqa: C901
             dice[e.dice[0]] += 1
             dice[e.dice[1]] += 1
             if e.dice[0] <= e.dice[1]:
-                pairs[(e.dice[0], e.dice[1])] += 1
+                pairs[e.dice[0]][e.dice[1]] += 1
             else:
-                pairs[(e.dice[1], e.dice[0])] += 1
+                pairs[e.dice[1]][e.dice[0]] += 1
             if e.dice[0] == e.dice[1] and e.value in {4, 6, 8, 10}:
                 hards[e.value] += 1
             if e.type == 'craps':
