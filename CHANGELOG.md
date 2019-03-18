@@ -8,11 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 
-- `rollstats` command, which reads roll information and outputs statistics
-  about those rolls
-- 'simulate` command, which takes the given odds of rolling each number,
-  simulates a bunch of rolls based on that distribution, and outputs statistics
-about those rolls
-- `plot` and `plot rollcounts` command, which takes output from
-  `simulate --roll-counts` and plots the resulting probability density
-functions
+- `parse` command, with ...
+   - `rollseries` subcommand, which reads a series of rolls as input and ouputs
+     Roll Events
+- `plot` command, with ...
+   - `pdf` subcommand, which reads a stream of Roll Events and plots a
+     probability density function of them
+- `simulate` command, which takes the given odds of rolling each number,
+  simulates a bunch of rolls based on that distribution, and outputs the
+resulting rolls
+- `statistics` command, which reads a stream of Roll Events and outputs
+  statistics about them
