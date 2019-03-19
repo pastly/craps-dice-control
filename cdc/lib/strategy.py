@@ -46,12 +46,12 @@ class Strategy:
         for bet in self.bets:
             if not bet.is_working:
                 continue
-            if bet.is_loser(self.last_roll):
+            if bet.is_loser(self.last_roll, self.point):
                 evs.append(CGEBetLost(bet))
                 remove_bets.append(bet)
-            elif bet.is_winner(self.last_roll):
+            elif bet.is_winner(self.last_roll, self.point):
                 evs.append(CGEBetWon(bet))
-                self._adjust_bankroll(bet.win_amount())
+                self._adjust_bankroll(bet.win_amount(self.last_roll))
                 remove_bets.append(bet)
         self._bets = [b for b in self.bets if b not in remove_bets]
         return evs
@@ -129,17 +129,17 @@ class CrapsBet:
     def set_working(self, working):
         self._working = working
 
-    def is_winner(self, roll):
+    def is_winner(self, roll, *a, **kw):
         ''' Subclass should re-implement this if win condition is not simply
         the dice adding up to some value '''
         return roll.value in self.roll_win
 
-    def is_loser(self, roll):
+    def is_loser(self, roll, *a, **kw):
         ''' Subclass should re-implement this if lose condition is not simply
         the dice adding up to some value '''
         return roll.value in self.roll_lose
 
-    def win_amount(self):
+    def win_amount(self, *a, **kw):
         ''' Subclass must implement this and calculate the winning amount based
         on self.amount '''
         raise NotImplementedError
@@ -150,8 +150,16 @@ class CBPass(CrapsBet):
     roll_win = {7, 11}
     roll_lose = {2, 3, 12}
 
-    def win_amount(self):
+    def win_amount(self, *a, **kw):
         return self.amount
+
+    def is_winner(self, roll, point):
+        return roll.value in self.roll_win\
+            if point is None else roll.value == point
+
+    def is_loser(self, roll, point):
+        return roll.value in self.roll_lose\
+            if point is None else roll.value == 7
 
 
 class CBDontPass(CrapsBet):
@@ -159,7 +167,33 @@ class CBDontPass(CrapsBet):
     roll_win = {2, 3}
     roll_lose = {7, 11}
 
-    def win_amount(self):
+    def win_amount(self, *a, **kw):
+        return self.amount
+
+    def is_winner(self, roll, point):
+        return roll.value in self.roll_win\
+            if point is None else roll.value == 7
+
+    def is_loser(self, roll, point):
+        return roll.value in self.roll_lose\
+            if point is None else roll.value == point
+
+
+class CBField(CrapsBet):
+    name = 'Field'
+    roll_win = {2, 3, 4, 9, 10, 11, 12}
+    roll_lose = {5, 6, 7, 8}
+
+    def __init__(self, *a, mult2=2, mult12=2, **kw):
+        super().__init__(*a, **kw)
+        self._mult2 = mult2
+        self._mult12 = mult12
+
+    def win_amount(self, roll):
+        if roll.value == 2:
+            return self.amount * self._mult2
+        elif roll.value == 12:
+            return self.amount * self._mult12
         return self.amount
 
 
