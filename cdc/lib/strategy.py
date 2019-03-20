@@ -81,6 +81,7 @@ class Strategy:
 
     def add_bet(self, b):
         assert isinstance(b, CrapsBet)
+        self._adjust_bankroll(-1 * b.amount)
         self._bets.append(b)
 
 
