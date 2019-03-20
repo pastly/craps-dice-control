@@ -1,5 +1,5 @@
 from cdc.lib.strategy import Strategy, CrapsRoll as R,\
-    CBPass, CBDontPass, CBField,\
+    CBPass, CBDontPass, CBField, CBPlace,\
     CGEBetWon, CGEBetLost,\
     CGEPointEstablished, CGEPointWon, CGEPointLost
 
@@ -425,3 +425,54 @@ def test_field_lose():
         assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
         assert not len(strat.bets)
         assert strat.bankroll == bankroll_before
+
+
+def test_place_win():
+    amount = 30
+    starting_bankroll = 0
+    for roll in all_dice_combos():
+        if roll.value not in {4, 5, 6, 8, 9, 10}:
+            continue
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBPlace(roll.value, amount))
+        bankroll_before = strat.bankroll
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
+        assert not len(strat.bets)
+        if roll.value in {4, 10}:
+            expected = amount * 9 / 5
+        elif roll.value in {5, 9}:
+            expected = amount * 7 / 5
+        else:
+            expected = amount * 7 / 6
+        assert strat.bankroll == bankroll_before + expected
+
+
+def test_place_lost():
+    amount = 30
+    starting_bankroll = 0
+    for roll_value in {4, 5, 6, 8, 9, 10}:
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBPlace(roll_value, amount))
+        bankroll_before = strat.bankroll
+        evs = strat.after_roll(R(1, 6))
+        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
+        assert not len(strat.bets)
+        assert strat.bankroll == bankroll_before
+
+
+def test_place_nothing():
+    amount = 30
+    starting_bankroll = 0
+    for value in {4, 5, 6, 8, 9, 10}:
+        for roll in all_dice_combos():
+            if roll.value == 7 or roll.value == value:
+                continue
+            strat = get_strat(starting_bankroll)
+            strat.add_bet(CBPlace(value, amount))
+            bankroll_before = strat.bankroll
+            evs = strat.after_roll(roll)
+            assert len(strat.bets) == 1
+            assert not len([e for e in evs if isinstance(e, CGEBetWon)])
+            assert not len([e for e in evs if isinstance(e, CGEBetLost)])
+            assert strat.bankroll == bankroll_before

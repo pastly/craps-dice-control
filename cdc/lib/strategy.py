@@ -198,6 +198,26 @@ class CBField(CrapsBet):
         return self.amount
 
 
+class CBPlace(CrapsBet):
+    name = 'Place'
+    roll_win = set()
+    roll_lose = {7}
+
+    def __init__(self, value, *a, **kw):
+        super().__init__(*a, **kw)
+        self.roll_win = {value}
+
+    def win_amount(self, *a, **kw):
+        rw = self.roll_win
+        assert len(rw) == 1
+        assert 4 in rw or 5 in rw or 6 in rw or 8 in rw or 9 in rw or 10 in rw
+        if 4 in rw or 10 in rw:
+            return self.amount * 9 / 5
+        elif 5 in rw or 9 in rw:
+            return self.amount * 7 / 5
+        return self.amount * 7 / 6
+
+
 class CrapsGameEvent:
     name = 'CrapsGameEvent'
 
