@@ -1,3 +1,4 @@
+from copy import copy
 
 _POINT_VALUES = {4, 5, 6, 8, 9, 10}
 
@@ -57,7 +58,24 @@ class Strategy:
         return evs
 
     def _convert_comes(self):
-        return []
+        evs = []
+        remove_bets = []
+        for bet in self.bets:
+            if not isinstance(bet, CBCome):
+                continue
+            if not bet.is_working:
+                continue
+            if bet.point is not None:
+                continue
+            if self.last_roll.value not in {4, 5, 6, 8, 9, 10}:
+                continue
+            new_bet = copy(bet)
+            new_bet.set_point(self.last_roll.value)
+            remove_bets.append(bet)
+            self.add_bet(new_bet, is_free=True)
+            evs.append(CGEBetConverted(bet, new_bet))
+        self._bets = [b for b in self.bets if b not in remove_bets]
+        return evs
 
     def _adjust_point(self):
         if self.point is None and self.last_roll.value in _POINT_VALUES:
@@ -79,9 +97,10 @@ class Strategy:
         evs.extend(self._adjust_point())
         return evs
 
-    def add_bet(self, b):
+    def add_bet(self, b, is_free=False):
         assert isinstance(b, CrapsBet)
-        self._adjust_bankroll(-1 * b.amount)
+        if not is_free:
+            self._adjust_bankroll(-1 * b.amount)
         self._bets.append(b)
 
 
@@ -180,6 +199,30 @@ class CBDontPass(CrapsBet):
             if point is None else roll.value == point
 
 
+class CBCome(CrapsBet):
+    name = 'Come'
+    roll_win = {7, 11}
+    roll_lose = {2, 3, 12}
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._point = None
+
+    def win_amount(self, *a, **kw):
+        return self.amount
+
+    def set_point(self, point):
+        assert point in {4, 5, 6, 8, 9, 10}
+        assert self.point is None
+        self._point = point
+        self.roll_win = {point}
+        self.roll_lose = {7}
+
+    @property
+    def point(self):
+        return self._point
+
+
 class CBField(CrapsBet):
     name = 'Field'
     roll_win = {2, 3, 4, 9, 10, 11, 12}
@@ -222,28 +265,54 @@ class CrapsGameEvent:
     name = 'CrapsGameEvent'
 
 
-class CGEWithBet(CrapsGameEvent):
-    def __init__(self, bet, *a, **kw):
+class CGEWithBets(CrapsGameEvent):
+    def __init__(self, bets, *a, **kw):
         super().__init__(*a, **kw)
-        self._bet = bet
+        # If given an iterable of bets, store it directly. Otherwise we were
+        # given a single bet, and should store it in a list
+        try:
+            iter(bets)
+        except TypeError:
+            self._bets = [bets]
+        else:
+            self._bets = bets
 
-    @property
-    def bet(self):
-        return self._bet
 
-
-class CGEBetWon(CGEWithBet):
+class CGEBetWon(CGEWithBets):
     name = 'BetWon'
 
     def __str__(self):
         return 'Win<%s>' % str(self.bet)
 
+    @property
+    def bet(self):
+        return self._bets[0]
 
-class CGEBetLost(CGEWithBet):
+
+class CGEBetLost(CGEWithBets):
     name = 'BetLost'
 
     def __str__(self):
         return 'Lost<%s>' % str(self.bet)
+
+    @property
+    def bet(self):
+        return self._bets[0]
+
+
+class CGEBetConverted(CGEWithBets):
+    name = 'BetConverted'
+
+    def __init__(self, from_bet, to_bet, *a, **kw):
+        super().__init__((from_bet, to_bet), *a, **kw)
+
+    @property
+    def from_bet(self):
+        return self._bets[0]
+
+    @property
+    def to_bet(self):
+        return self._bets[1]
 
 
 class CGEPoint(CrapsGameEvent):
