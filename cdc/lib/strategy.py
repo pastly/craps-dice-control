@@ -247,6 +247,38 @@ class CBDontCome(CrapsBet):
         return self._point
 
 
+class CBOdds(CrapsBet):
+    name = 'Odds'
+    roll_win = set()
+    roll_lose = set()
+
+    def __init__(self, point, is_dont, *a, **kw):
+        super().__init__(*a, **kw)
+        assert point in {4, 5, 6, 8, 9, 10}
+        self._point = point
+        self._is_dont = is_dont
+        if not is_dont:
+            self.roll_win = {self.point}
+            self.roll_lose = {7}
+        else:
+            self.roll_win = {7}
+            self.roll_lose = {self.point}
+
+    @property
+    def point(self):
+        return self._point
+
+    def win_amount(self, *a, **kw):
+        if self.point in {4, 10}:
+            ratio = 1 / 2 if self._is_dont else 2 / 1
+            return self.amount * ratio
+        elif self.point in {5, 9}:
+            ratio = 2 / 3 if self._is_dont else 3 / 2
+            return self.amount * ratio
+        ratio = 5 / 6 if self._is_dont else 6 / 5
+        return self.amount * ratio
+
+
 class CBField(CrapsBet):
     name = 'Field'
     roll_win = {2, 3, 4, 9, 10, 11, 12}
