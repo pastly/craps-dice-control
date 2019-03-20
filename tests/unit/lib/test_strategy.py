@@ -1,5 +1,5 @@
 from cdc.lib.strategy import Strategy, CrapsRoll as R,\
-    CBPass, CBDontPass, CBField, CBPlace, CBCome,\
+    CBPass, CBDontPass, CBField, CBPlace, CBCome, CBDontCome,\
     CGEBetWon, CGEBetLost, CGEBetConverted,\
     CGEPointEstablished, CGEPointWon, CGEPointLost
 
@@ -565,6 +565,105 @@ def test_come_point_nothing():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBCome(amount))
+        bankroll_before = strat.bankroll
+        evs = strat.after_roll(first_roll)
+        assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
+        for second_roll in all_dice_combos():
+            if second_roll.value in {first_roll.value, 7}:
+                continue
+            evs = strat.after_roll(second_roll)
+            assert not len(evs)
+            assert len(strat.bets) == 1
+            assert strat.bankroll == bankroll_before
+
+
+def test_dcome_win():
+    amount = 5
+    starting_bankroll = 0
+    for roll in {R(1, 1), R(1, 2)}:
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBDontCome(amount))
+        bankroll_before = strat.bankroll
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
+        assert not len(strat.bets)
+        assert strat.bankroll == bankroll_before + amount
+
+
+def test_dcome_lose():
+    amount = 5
+    starting_bankroll = 0
+    for roll in {R(3, 4), R(5, 6)}:
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBDontCome(amount))
+        bankroll_before = strat.bankroll
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
+        assert not len(strat.bets)
+        assert strat.bankroll == bankroll_before
+
+
+def test_dcome_convert():
+    amount = 5
+    starting_bankroll = 0
+    for roll in all_dice_combos():
+        if roll.value in {2, 3, 7, 11, 12}:
+            continue
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBDontCome(amount))
+        bankroll_before = strat.bankroll
+        assert strat.bets[0].point is None
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
+        assert evs[0].from_bet.point is None
+        assert evs[0].to_bet.point == roll.value
+        assert len(strat.bets) == 1
+        assert strat.bets[0].point == roll.value
+        assert strat.bankroll == bankroll_before
+
+
+def test_dcome_point_win():
+    amount = 5
+    starting_bankroll = 0
+    for roll in all_dice_combos():
+        if roll.value in {2, 3, 7, 11, 12}:
+            continue
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBDontCome(amount))
+        bankroll_before = strat.bankroll
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
+        evs = strat.after_roll(R(3, 4))
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
+        assert not len(strat.bets)
+        assert strat.bankroll == bankroll_before + amount
+
+
+def test_dcome_point_lose():
+    amount = 5
+    starting_bankroll = 0
+    for roll in all_dice_combos():
+        if roll.value in {2, 3, 7, 11, 12}:
+            continue
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBDontCome(amount))
+        bankroll_before = strat.bankroll
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
+        assert not len(strat.bets)
+        assert strat.bankroll == bankroll_before
+
+
+def test_dcome_point_nothing():
+    amount = 5
+    starting_bankroll = 0
+    for first_roll in all_dice_combos():
+        if first_roll.value in {2, 3, 7, 11, 12}:
+            continue
+        strat = get_strat(starting_bankroll)
+        strat.add_bet(CBDontCome(amount))
         bankroll_before = strat.bankroll
         evs = strat.after_roll(first_roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1

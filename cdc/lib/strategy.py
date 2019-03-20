@@ -61,7 +61,7 @@ class Strategy:
         evs = []
         remove_bets = []
         for bet in self.bets:
-            if not isinstance(bet, CBCome):
+            if not isinstance(bet, CBCome) and not isinstance(bet, CBDontCome):
                 continue
             if not bet.is_working:
                 continue
@@ -217,6 +217,30 @@ class CBCome(CrapsBet):
         self._point = point
         self.roll_win = {point}
         self.roll_lose = {7}
+
+    @property
+    def point(self):
+        return self._point
+
+
+class CBDontCome(CrapsBet):
+    name = 'DontCome'
+    roll_win = {2, 3}
+    roll_lose = {7, 11}
+
+    def __init__(self, *a, **kw):
+        super().__init__(*a, **kw)
+        self._point = None
+
+    def win_amount(self, *a, **kw):
+        return self.amount
+
+    def set_point(self, point):
+        assert point in {4, 5, 6, 8, 9, 10}
+        assert self.point is None
+        self._point = point
+        self.roll_win = {7}
+        self.roll_lose = {point}
 
     @property
     def point(self):
