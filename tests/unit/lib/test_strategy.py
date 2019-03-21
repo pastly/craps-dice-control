@@ -1,7 +1,8 @@
 from cdc.lib.strategy import Strategy, CrapsRoll as R,\
     CBPass, CBDontPass, CBField, CBPlace, CBCome, CBDontCome, CBOdds,\
     CGEBetWon, CGEBetLost, CGEBetConverted,\
-    CGEPointEstablished, CGEPointWon, CGEPointLost
+    CGEPointEstablished, CGEPointWon, CGEPointLost,\
+    MartingaleFieldStrategy
 
 # import pytest
 
@@ -11,7 +12,7 @@ def get_strat(bankroll=0):
 
 
 def all_dice_combos():
-    for roll in {R(i, j) for i in range(1, 6+1) for j in range(i, 6+1)}:
+    for roll in {R(i, j) for i in range(1, 6+1) for j in range(1, 6+1)}:
         yield roll
 
 
@@ -90,7 +91,6 @@ def test_pass_win():
     for roll in {R(1, 6), R(5, 6)}:
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBPass(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         # Should have a winning event
         assert len(evs) == 1
@@ -99,7 +99,7 @@ def test_pass_win():
         # Pass bet should be removed
         assert not len(strat.bets)
         # Bankroll should be increased
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
 
 
 def test_pass_lose():
@@ -147,7 +147,6 @@ def test_pass_point_win():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBPass(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         # should establish point
         assert len(evs) == 1
@@ -164,7 +163,7 @@ def test_pass_point_win():
         # point should be none
         assert strat.point is None
         # bankroll should increase
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
         # bet should be gone
         assert not len(strat.bets)
 
@@ -243,7 +242,6 @@ def test_dpass_point_win():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBDontPass(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         # should establish point
         assert len(evs) == 1
@@ -261,7 +259,7 @@ def test_dpass_point_win():
         # point should be none
         assert strat.point is None
         # bankroll should increase
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
         # bet should be gone
         assert not len(strat.bets)
 
@@ -338,7 +336,6 @@ def test_dpass_win():
     for roll in {R(1, 1), R(1, 2)}:
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBDontPass(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         # Should have a winning event
         assert len(evs) == 1
@@ -347,7 +344,7 @@ def test_dpass_win():
         # Dont Pass bet should be removed
         assert not len(strat.bets)
         # Bankroll be up
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
 
 
 def test_dpass_lose():
@@ -396,20 +393,18 @@ def test_field_win():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBField(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
     for roll in {R(1, 1), R(6, 6)}:
         for mult in {2, 3}:
             strat = get_strat(starting_bankroll)
             strat.add_bet(CBField(amount, mult2=mult, mult12=mult))
-            bankroll_before = strat.bankroll
             evs = strat.after_roll(roll)
             assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
             assert not len(strat.bets)
-            assert strat.bankroll == bankroll_before + amount * mult
+            assert strat.bankroll == starting_bankroll + amount * mult
 
 
 def test_field_lose():
@@ -435,7 +430,6 @@ def test_place_win():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBPlace(roll.value, amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
@@ -445,7 +439,7 @@ def test_place_win():
             expected = amount * 7 / 5
         else:
             expected = amount * 7 / 6
-        assert strat.bankroll == bankroll_before + expected
+        assert strat.bankroll == starting_bankroll + expected
 
 
 def test_place_lost():
@@ -454,11 +448,10 @@ def test_place_lost():
     for roll_value in {4, 5, 6, 8, 9, 10}:
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBPlace(roll_value, amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(R(1, 6))
         assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
         assert not len(strat.bets)
-        assert strat.bankroll == bankroll_before
+        assert strat.bankroll == starting_bankroll - amount
 
 
 def test_place_nothing():
@@ -484,11 +477,10 @@ def test_come_win():
     for roll in {R(3, 4), R(5, 6)}:
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBCome(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
 
 
 def test_come_lose():
@@ -531,13 +523,12 @@ def test_come_point_win():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBCome(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
 
 
 def test_come_point_lose():
@@ -583,11 +574,10 @@ def test_dcome_win():
     for roll in {R(1, 1), R(1, 2)}:
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBDontCome(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
 
 
 def test_dcome_lose():
@@ -630,13 +620,12 @@ def test_dcome_point_win():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBDontCome(amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
         evs = strat.after_roll(R(3, 4))
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
-        assert strat.bankroll == bankroll_before + amount
+        assert strat.bankroll == starting_bankroll + amount
 
 
 def test_dcome_point_lose():
@@ -684,16 +673,15 @@ def test_odds_win():
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBOdds(roll.value, False, amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
         if roll.value in {4, 10}:
-            expected = bankroll_before + amount * 2 / 1
+            expected = starting_bankroll + amount * 2 / 1
         elif roll.value in {5, 9}:
-            expected = bankroll_before + amount * 3 / 2
+            expected = starting_bankroll + amount * 3 / 2
         else:
-            expected = bankroll_before + amount * 6 / 5
+            expected = starting_bankroll + amount * 6 / 5
         assert strat.bankroll == expected
 
 
@@ -721,12 +709,11 @@ def test_odds_nothing():
                 continue
             strat = get_strat(starting_bankroll)
             strat.add_bet(CBOdds(point, False, amount))
-            bankroll_before = strat.bankroll
             evs = strat.after_roll(roll)
             assert not len([e for e in evs if isinstance(e, CGEBetWon)])
             assert not len([e for e in evs if isinstance(e, CGEBetLost)])
             assert len(strat.bets) == 1
-            assert strat.bankroll == bankroll_before
+            assert strat.bankroll == starting_bankroll - amount
 
 
 def test_dodds_win():
@@ -735,16 +722,15 @@ def test_dodds_win():
     for point in {4, 5, 6, 8, 9, 10}:
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBOdds(point, True, amount))
-        bankroll_before = strat.bankroll
         evs = strat.after_roll(R(3, 4))
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
         assert not len(strat.bets)
         if point in {4, 10}:
-            expected = bankroll_before + amount * 1 / 2
+            expected = starting_bankroll + amount * 1 / 2
         elif point in {5, 9}:
-            expected = bankroll_before + amount * 2 / 3
+            expected = starting_bankroll + amount * 2 / 3
         else:
-            expected = bankroll_before + amount * 5 / 6
+            expected = starting_bankroll + amount * 5 / 6
         assert strat.bankroll == expected
 
 
@@ -778,3 +764,11 @@ def test_dodds_nothing():
             assert not len([e for e in evs if isinstance(e, CGEBetLost)])
             assert len(strat.bets) == 1
             assert strat.bankroll == bankroll_before
+
+
+def test_martingale_field_strat():
+    strat = MartingaleFieldStrategy(5)
+    for roll in sorted(all_dice_combos(), key=lambda r: r.value):
+        strat.make_bets()
+        strat.after_roll(roll)
+    assert strat.bankroll == 90

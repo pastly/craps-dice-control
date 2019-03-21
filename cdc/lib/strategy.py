@@ -52,7 +52,8 @@ class Strategy:
                 remove_bets.append(bet)
             elif bet.is_winner(self.last_roll, self.point):
                 evs.append(CGEBetWon(bet))
-                self._adjust_bankroll(bet.win_amount(self.last_roll))
+                self._adjust_bankroll(
+                    bet.amount + bet.win_amount(self.last_roll))
                 remove_bets.append(bet)
         self._bets = [b for b in self.bets if b not in remove_bets]
         return evs
@@ -102,6 +103,10 @@ class Strategy:
         if not is_free:
             self._adjust_bankroll(-1 * b.amount)
         self._bets.append(b)
+
+    def make_bets(self):
+        ''' Subclasses should implement this '''
+        raise NotImplementedError
 
 
 class CrapsRoll:
@@ -394,3 +399,19 @@ class CGEPointWon(CGEPoint):
 class CGEPointLost(CGEPoint):
     def __str__(self):
         return 'PointLost<%d>' % self.point_value
+
+
+class MartingaleFieldStrategy(Strategy):
+    def __init__(self, base_bet, *a, **kw):
+        self._base_bet = base_bet
+        super().__init__('MartengaleFieldStrat', *a, **kw)
+
+    def make_bets(self):
+        amount = self._base_bet
+        rolls_reverse = reversed(self.rolls)
+        for roll in rolls_reverse:
+            if roll.value in {2, 3, 4, 9, 10, 11, 12}:
+                break
+            amount *= 2
+        assert not len(self.bets)
+        self.add_bet(CBField(amount))
