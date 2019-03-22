@@ -141,7 +141,7 @@ class CrapsBet:
             self.roll_lose == other.roll_lose
 
     def __str__(self):
-        return 'Bet<%s %d %s>' % (
+        return 'Bet<%s $%d %s>' % (
             self.name, self.amount, 'on' if self.is_working else 'off')
 
     @property
