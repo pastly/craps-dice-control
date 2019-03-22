@@ -515,6 +515,24 @@ def test_come_convert():
         assert strat.bankroll == bankroll_before
 
 
+def test_come_off_convert():
+    ''' A come bet that is not working (whatever that means in the real world)
+    should not get converted '''
+    amount = 5
+    starting_bankroll = 0
+    for roll in all_dice_combos():
+        if roll.value in {2, 3, 7, 11, 12}:
+            continue
+        strat = get_strat(starting_bankroll)
+        bet = CBCome(amount)
+        bet.set_working(False)
+        strat.add_bet(bet)
+        evs = strat.after_roll(roll)
+        assert not len([e for e in evs if isinstance(e, CGEBetConverted)])
+        bet_out = strat.bets[0]
+        assert bet == bet_out
+
+
 def test_come_point_win():
     amount = 5
     starting_bankroll = 0
