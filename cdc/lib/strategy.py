@@ -83,8 +83,9 @@ class Strategy:
             self._point = self.last_roll.value
             return [CGEPointEstablished(self.last_roll.value)]
         elif self.point is not None and self.last_roll.value == 7:
+            ret = [CGEPointLost(self.point)]
             self._point = None
-            return [CGEPointLost(self.point)]
+            return ret
         elif self.point is not None and self.last_roll.value == self.point:
             self._point = None
             return [CGEPointWon(self.last_roll.value)]
