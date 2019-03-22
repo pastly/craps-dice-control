@@ -33,7 +33,7 @@ def test_strat_point_est():
     # check the event
     assert len(evs) == 1
     assert isinstance(evs[0], CGEPointEstablished)
-    assert evs[0].point_value == 9
+    assert evs[0].point == 9
 
 
 def test_strat_point_won():
@@ -43,12 +43,12 @@ def test_strat_point_won():
     assert strat.point == 9
     assert len(evs) == 1
     assert isinstance(evs[0], CGEPointEstablished)
-    assert evs[0].point_value == 9
+    assert evs[0].point == 9
     evs = strat.after_roll(R(4, 5))
     assert strat.point is None
     assert len(evs) == 1
     assert isinstance(evs[0], CGEPointWon)
-    assert evs[0].point_value == 9
+    assert evs[0].point == 9
 
 
 def test_strat_point_lost():

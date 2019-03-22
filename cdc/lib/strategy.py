@@ -377,28 +377,28 @@ class CGEBetConverted(CGEWithBets):
 
 
 class CGEPoint(CrapsGameEvent):
-    def __init__(self, point_value, *a, **kw):
+    def __init__(self, point, *a, **kw):
         super().__init__(*a, **kw)
-        self._value = point_value
+        self._point = point
 
     @property
-    def point_value(self):
-        return self._value
+    def point(self):
+        return self._point
 
 
 class CGEPointEstablished(CGEPoint):
     def __str__(self):
-        return 'PointEst<%d>' % self.point_value
+        return 'PointEst<%d>' % self.point
 
 
 class CGEPointWon(CGEPoint):
     def __str__(self):
-        return 'PointWon<%d>' % self.point_value
+        return 'PointWon<%d>' % self.point
 
 
 class CGEPointLost(CGEPoint):
     def __str__(self):
-        return 'PointLost<%d>' % self.point_value
+        return 'PointLost<%d>' % self.point
 
 
 class MartingaleFieldStrategy(Strategy):
