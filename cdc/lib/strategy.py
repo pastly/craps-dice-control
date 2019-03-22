@@ -416,3 +416,14 @@ class MartingaleFieldStrategy(Strategy):
             amount *= 2
         assert not len(self.bets)
         self.add_bet(CBField(amount))
+
+
+class BasicPassStrategy(Strategy):
+    def __init__(self, base_bet, *a, **kw):
+        self._base_bet = base_bet
+        super().__init__('BasicPassStrat', *a, **kw)
+
+    def make_bets(self):
+        amount = self._base_bet
+        if self.point is None and not len(self.bets):
+            self.add_bet(CBPass(amount))

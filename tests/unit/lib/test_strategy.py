@@ -2,7 +2,7 @@ from cdc.lib.strategy import Strategy, CrapsRoll as R,\
     CBPass, CBDontPass, CBField, CBPlace, CBCome, CBDontCome, CBOdds,\
     CGEBetWon, CGEBetLost, CGEBetConverted,\
     CGEPointEstablished, CGEPointWon, CGEPointLost,\
-    MartingaleFieldStrategy
+    MartingaleFieldStrategy, BasicPassStrategy
 
 # import pytest
 
@@ -772,3 +772,11 @@ def test_martingale_field_strat():
         strat.make_bets()
         strat.after_roll(roll)
     assert strat.bankroll == 90
+
+
+def test_basic_pass_strat():
+    strat = BasicPassStrategy(5)
+    for roll in sorted(all_dice_combos(), key=lambda r: r.value):
+        strat.make_bets()
+        strat.after_roll(roll)
+    assert strat.bankroll == 15
