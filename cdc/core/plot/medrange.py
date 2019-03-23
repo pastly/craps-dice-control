@@ -54,6 +54,11 @@ def make_expected_counts(num_rolls):
     return counts, hards
 
 
+def rgb_conv(r, g, b):
+    ''' Takes rgb in [0, 255] space and turns into rgb in [0, 1] space '''
+    return r / 255, g / 255, b / 255
+
+
 def plot(out_fd, data_sets):
     ''' Plot the median value across many sets of data, as well as the area
     between the 1st and 3rd quartiles.
@@ -92,35 +97,55 @@ def plot(out_fd, data_sets):
     for x in d:
         stats_d[x] = (
             min(d[x]),
+            percentile(d[x], 5),
             percentile(d[x], 25),
             percentile(d[x], 50),
             percentile(d[x], 75),
+            percentile(d[x], 95),
             max(d[x]),
         )
-    line_color = (0, 0, 1, 1)
-    inner_range_color = (0.2, 0, 0.8, 0.5)
-    outer_range_color = (0.5, 0, 0.5, 0.3)
-    mins = [v[0] for v in stats_d.values()]
-    first = [v[1] for v in stats_d.values()]
-    second = [v[2] for v in stats_d.values()]
-    third = [v[3] for v in stats_d.values()]
-    maxes = [v[4] for v in stats_d.values()]
-    plt.plot(stats_d.keys(), second, color=line_color, label='median')
-    plt.plot(stats_d.keys(), mins, color=outer_range_color)
-    plt.plot(stats_d.keys(), maxes, color=outer_range_color)
+    # colors selected to be good for colorblind people
+    # http://www.somersault1824.com/tips-for-designing-scientific-figures-for-color-blind-readers/
+    # http://mkweb.bcgsc.ca/biovis2012/
+    # http://mkweb.bcgsc.ca/colorblind/
+    dark_purple = rgb_conv(73, 0, 146)
+    dark_blue = rgb_conv(0, 109, 219)
+    purple = rgb_conv(182, 109, 255)
+    blue = rgb_conv(109, 182, 255)
+    light_blue = rgb_conv(182, 219, 255)
+    uppest_color = *dark_purple, 0.9
+    upper_color = *dark_blue, 0.9
+    med_color = *purple, 1
+    middle_color = *purple, 0.5
+    lower_color = *blue, 0.9
+    lowest_color = *light_blue, 0.9
+    per_0 = [v[0] for v in stats_d.values()]
+    per_5 = [v[1] for v in stats_d.values()]
+    per_25 = [v[2] for v in stats_d.values()]
+    per_50 = [v[3] for v in stats_d.values()]
+    per_75 = [v[4] for v in stats_d.values()]
+    per_95 = [v[5] for v in stats_d.values()]
+    per_100 = [v[6] for v in stats_d.values()]
+    # plt.plot(stats_d.keys(), per_100, color=max_color, label='max')
+    plt.plot(stats_d.keys(), per_50, color=med_color, label='median')
+    # plt.plot(stats_d.keys(), per_0, color=min_color, label='min')
     plt.fill_between(
-        stats_d.keys(), third, first, color=inner_range_color,
-        label='1st-3rd quartile')
+        stats_d.keys(), per_100, per_95, color=uppest_color, label='top 5%')
     plt.fill_between(
-        stats_d.keys(), maxes, third, color=outer_range_color)
-    plt.fill_between(stats_d.keys(), first, mins, color=outer_range_color)
+        stats_d.keys(), per_95, per_75, color=upper_color, label='next 20%')
+    plt.fill_between(
+        stats_d.keys(), per_75, per_25, color=middle_color, label='middle 50%')
+    plt.fill_between(
+        stats_d.keys(), per_25, per_5, color=lower_color, label='next 20%')
+    plt.fill_between(
+        stats_d.keys(), per_5, per_0, color=lowest_color, label='bottom 5%')
     plt.xlim(left=0, right=max(stats_d.keys()))
     # plt.ylim(top=max(third), bottom=min(first))
     plt.xlabel('Roll number')
     plt.ylabel('Change in bankroll')
     plt.legend(loc='best', fontsize=8)
     plt.title('Expected bankroll change over time')
-    plt.savefig(out_fd, transparent=False)
+    plt.savefig(out_fd, transparent=True)
 
 
 def gen_parser(sub):
