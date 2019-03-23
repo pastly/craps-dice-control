@@ -115,7 +115,7 @@ def plot(out_fd, data_sets):
         stats_d.keys(), maxes, third, color=outer_range_color)
     plt.fill_between(stats_d.keys(), first, mins, color=outer_range_color)
     plt.xlim(left=0, right=max(stats_d.keys()))
-    plt.ylim(top=max(third), bottom=min(first))
+    # plt.ylim(top=max(third), bottom=min(first))
     plt.xlabel('Roll number')
     plt.ylabel('Change in bankroll')
     plt.legend(loc='best', fontsize=8)
