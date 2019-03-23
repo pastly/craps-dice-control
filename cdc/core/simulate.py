@@ -67,7 +67,7 @@ def f(_):
     return data_set
 
 
-def init_globals(semaphore_, weights_, num_rolls_, strat_class_):
+def _init_bankroll_globals(semaphore_, weights_, num_rolls_, strat_class_):
     global semaphore, weights, num_rolls, strat_class
     semaphore = semaphore_
     weights = weights_
@@ -75,19 +75,24 @@ def init_globals(semaphore_, weights_, num_rolls_, strat_class_):
     strat_class = strat_class_
 
 
-def do_bankroll(args, stats):
+def bankroll_over_time_repeatedly(stats, strat_class, num_rolls, num_repeat):
     weights = _calc_die_weights(stats)
-    strat_class = BasicPassStrategy
     chunk_size = 32
     cpu_count = mp.cpu_count()
     semaphore = mp.Semaphore(chunk_size * cpu_count)
     with mp.Pool(
-            initializer=init_globals, initargs=(
-                semaphore, weights, args.rolls, strat_class)) as pool:
-        for res in pool.imap_unordered(f, range(args.repeat), chunk_size):
-            json.dump(res, args.output)
-            args.output.write('\n')
+            initializer=_init_bankroll_globals,
+            initargs=(semaphore, weights, num_rolls, strat_class)) as pool:
+        for res in pool.imap_unordered(f, range(num_repeat), chunk_size):
+            yield res
             semaphore.release()
+
+
+def do_bankroll(args, stats):
+    for res in bankroll_over_time_repeatedly(
+            stats, BasicPassStrategy, args.rolls, args.repeat):
+        json.dump(res, args.output)
+        args.output.write('\n')
 
 
 def gen_parser(sub):
