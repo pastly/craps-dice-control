@@ -165,7 +165,7 @@ def gen_parser(sub):
         help='File to which to write graph')
     p.add_argument(
         '--title', type=str, help='Title of graph',
-        default='Expected bankrool change over time')
+        default='Expected bankroll change over time')
     return p
 
 
