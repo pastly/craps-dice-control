@@ -1,7 +1,7 @@
 from ..lib.argparse import BoundedInt
 from ..util.json import NumericKeyDecoder
 from ..util.rand import roll_die_with_weights
-from ..lib.strategy import BasicPassStrategy, CrapsRoll as R
+from ..lib.strategy import ThreePointMolly, CrapsRoll as R
 
 from argparse import ArgumentDefaultsHelpFormatter, FileType
 from datetime import datetime
@@ -52,7 +52,7 @@ def do_rollseries(args, stats):
 
 
 def f(_):
-    strat = strat_class(5)
+    strat = strat_class(5, (0, 0, 0))
     data_set = {}
     next_jump = 10
     for i, pair in enumerate(
@@ -91,7 +91,7 @@ def bankroll_over_time_repeatedly(stats, strat_class, num_rolls, num_repeat):
 def do_bankroll(args, stats):
     count = 0
     for res in bankroll_over_time_repeatedly(
-            stats, BasicPassStrategy, args.rolls, args.repeat):
+            stats, ThreePointMolly, args.rolls, args.repeat):
         json.dump(res, args.output)
         args.output.write('\n')
         count += 1

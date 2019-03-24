@@ -1,6 +1,9 @@
 from copy import copy
+import logging
+
 
 _POINT_VALUES = {4, 5, 6, 8, 9, 10}
+log = logging.getLogger(__name__)
 
 
 class Strategy:
@@ -381,6 +384,9 @@ class CGEBetConverted(CGEWithBets):
     def to_bet(self):
         return self._bets[1]
 
+    def __str__(self):
+        return 'BetConverted<from=%s to=%s>' % (self.from_bet, self.to_bet)
+
 
 class CGEPoint(CrapsGameEvent):
     def __init__(self, point, *a, **kw):
@@ -483,3 +489,58 @@ class BasicPlaceStrategy(Strategy):
                 continue
             a = amount if n not in {6, 8} else amount * 1.2
             self.add_bet(CBPlace(n, a))
+
+
+class ThreePointMolly(Strategy):
+    def __init__(self, base_bet, odds, *a, **kw):
+        ''' Plays the 3-point molly strategy with max odds. Turns come odds off
+        during come out rolls.
+
+        base_bet is what to bet on the Pass and Come.
+
+        odds is a list/tuple and contains three values: the max odds allowed on
+        the 4/10, 5/9 and 6/8.
+        '''
+        self._base_bet = base_bet
+        self._odds = odds
+        super().__init__('ThreePointMollyStrat', *a, **kw)
+
+    def _calc_odds_amount(self, point):
+        if point in {4, 10}:
+            return self._base_bet * self._odds[0]
+        elif point in {5, 9}:
+            return self._base_bet * self._odds[1]
+        return self._base_bet * self._odds[2]
+
+    def make_bets(self):
+        amount = self._base_bet
+        if self.point is None:
+            # Set any come odds off
+            for bet in self.bets:
+                if not isinstance(bet, CBOdds):
+                    continue
+                bet.set_working(False)
+            # Make pass bet if needed
+            if not len([b for b in self.bets if isinstance(b, CBPass)]):
+                self.add_bet(CBPass(amount))
+            return
+        assert self.point in {4, 5, 6, 8, 9, 10}
+        come_bets = [b for b in self.bets if isinstance(b, CBCome)]
+        odds_bets = [b for b in self.bets if isinstance(b, CBOdds)]
+        # Make pass odds bet if needed
+        if not len([b for b in odds_bets if b.point == self.point]):
+            a = self._calc_odds_amount(self.point)
+            self.add_bet(CBOdds(self.point, False, a))
+        # Make come odds bet if needed
+        for come_bet in come_bets:
+            odds = [b for b in odds_bets if b.point == come_bet.point]
+            if not len(odds):
+                a = self._calc_odds_amount(self.point)
+                self.add_bet(CBOdds(come_bet.point, False, a))
+        # Make come bet if needed
+        assert len(come_bets) <= 2
+        if len(come_bets) < 2:
+            self.add_bet(CBCome(amount))
+        # Make sure all odds are working
+        for bet in odds_bets:
+            bet.set_working(True)
