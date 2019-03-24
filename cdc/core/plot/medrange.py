@@ -59,7 +59,7 @@ def rgb_conv(r, g, b):
     return r / 255, g / 255, b / 255
 
 
-def plot(out_fd, data_sets):
+def plot(out_fd, data_sets, strings):
     ''' Plot the median value across many sets of data, as well as the area
     between the 1st and 3rd quartiles.
 
@@ -70,6 +70,9 @@ def plot(out_fd, data_sets):
 
     out_fd: the file-like object to which to write the graph in PNG file format
     data_sets: an iterable, containing one or more data set dictionary
+
+    strings: a dictionary containing strings for the:
+        - title
 
     An example data set dictionary:
         {
@@ -144,7 +147,7 @@ def plot(out_fd, data_sets):
     plt.xlabel('Roll number')
     plt.ylabel('Change in bankroll')
     plt.legend(loc='best', fontsize=8)
-    plt.title('Expected bankroll change over time')
+    plt.title(strings['title'])
     plt.savefig(out_fd, transparent=True)
 
 
@@ -160,9 +163,14 @@ def gen_parser(sub):
     p.add_argument(
         '-o', '--output', type=FileType('wb'), default='/dev/stdout',
         help='File to which to write graph')
+    p.add_argument(
+        '--title', type=str, help='Title of graph',
+        default='Expected bankrool change over time')
     return p
 
 
 def main(args, conf):
-    plot(args.output, data_sets_from_input(args.input))
+    plot(args.output, data_sets_from_input(args.input), {
+        'title': args.title,
+    })
     return 0
