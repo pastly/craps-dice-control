@@ -89,10 +89,16 @@ def bankroll_over_time_repeatedly(stats, strat_class, num_rolls, num_repeat):
 
 
 def do_bankroll(args, stats):
+    count = 0
     for res in bankroll_over_time_repeatedly(
             stats, BasicPassStrategy, args.rolls, args.repeat):
         json.dump(res, args.output)
         args.output.write('\n')
+        count += 1
+        if not count % 1000:
+            log.debug(
+                '%0.2f%% (%d/%d) done', 100*count/args.repeat, count,
+                args.repeat)
 
 
 def gen_parser(sub):
