@@ -11,7 +11,6 @@ import pylab as plt  # noqa
 
 plt.rcParams.update({
     'axes.grid': True,
-    'savefig.format': 'png',
 })
 log = logging.getLogger(__name__)
 
@@ -59,7 +58,13 @@ def rgb_conv(r, g, b):
     return r / 255, g / 255, b / 255
 
 
-def plot(out_fd, data_sets, strings):
+def plot(
+        out_fd, data_sets,
+        title='Expected bankroll change over time',
+        xlabel='Roll number',
+        ylabel='Change in bankroll',
+        file_format='png',
+        transparent=False):
     ''' Plot the median value across many sets of data, as well as the area
     between the 1st and 3rd quartiles.
 
@@ -71,8 +76,11 @@ def plot(out_fd, data_sets, strings):
     out_fd: the file-like object to which to write the graph in PNG file format
     data_sets: an iterable, containing one or more data set dictionary
 
-    strings: a dictionary containing strings for the:
-        - title
+    file_format: file format to output. Must be one of:
+        - png
+        - svg
+
+    transparent: whether or not the file should have a transparent background
 
     An example data set dictionary:
         {
@@ -86,6 +94,7 @@ def plot(out_fd, data_sets, strings):
     Where each key is an x value and the key's value is the corresponding y
     value. All data sets must have the same exact set of keys.
     '''
+    assert file_format in 'png svg svgz'.split(' ')
     plt.figure()
     d = None
     for data_set in data_sets:
@@ -144,11 +153,11 @@ def plot(out_fd, data_sets, strings):
         stats_d.keys(), per_5, per_0, color=lowest_color, label='bottom 5%')
     plt.xlim(left=0, right=max(stats_d.keys()))
     # plt.ylim(top=max(third), bottom=min(first))
-    plt.xlabel('Roll number')
-    plt.ylabel('Change in bankroll')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     plt.legend(loc='best', fontsize=8)
-    plt.title(strings['title'])
-    plt.savefig(out_fd, transparent=True)
+    plt.title(title)
+    plt.savefig(out_fd, transparent=transparent, format=file_format)
 
 
 def gen_parser(sub):
@@ -164,13 +173,28 @@ def gen_parser(sub):
         '-o', '--output', type=FileType('wb'), default='/dev/stdout',
         help='File to which to write graph')
     p.add_argument(
+        '--format', choices='png svg svgz'.split(), default='png',
+        help='File format to use')
+    p.add_argument(
         '--title', type=str, help='Title of graph',
         default='Expected bankroll change over time')
+    p.add_argument(
+        '--xlabel', type=str, help='Label of X axis', default='Roll number')
+    p.add_argument(
+        '--ylabel', type=str, help='Label of y axis',
+        default='Change in bankroll')
+    p.add_argument(
+        '--transparent', action='store_true')
     return p
 
 
 def main(args, conf):
-    plot(args.output, data_sets_from_input(args.input), {
-        'title': args.title,
-    })
+    plot(
+        args.output, data_sets_from_input(args.input),
+        title=args.title,
+        xlabel=args.xlabel,
+        ylabel=args.ylabel,
+        file_format=args.format,
+        transparent=args.transparent,
+    )
     return 0
