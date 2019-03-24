@@ -432,3 +432,54 @@ class BasicPassStrategy(Strategy):
         amount = self._base_bet
         if self.point is None and not len(self.bets):
             self.add_bet(CBPass(amount))
+
+
+class BasicComeStrategy(Strategy):
+    def __init__(self, base_bet, max_comes, *a, **kw):
+        ''' Whenever there is a point and less than max_comes Come bets exist
+        up, make a come bet. No odds. '''
+        self._base_bet = base_bet
+        self._max = max_comes
+        assert max_comes >= 1 and max_comes <= 6
+        super().__init__('BasicComeStrat', *a, **kw)
+
+    def make_bets(self):
+        amount = self._base_bet
+        if self.point is None:
+            return
+        if len(self.bets) > self._max:
+            return
+        self.add_bet(CBCome(amount))
+
+
+class BasicPlaceStrategy(Strategy):
+    def __init__(self, base_bet, which_nums, *a, **kw):
+        ''' Whenever there is a point and one of the place values you want to
+        bet on is missing, make a bet for it. Never press bets. Never take them
+        down.
+
+        base_bet is the amount to bet on 4, 5, 9, and 10. It is multiplied
+        by 1.2 for the amount to bet on 6 and 8.
+
+        which_nums is list-like and contains the integer values 4, 5, 6, 8, 9,
+        and/or 10 to indiciate which values to make a bet on
+        '''
+        self._base_bet = base_bet
+        self._nums = which_nums
+        super().__init__('BasicPlaceStrat', *a, **kw)
+
+    def make_bets(self):
+        amount = self._base_bet
+        if self.point is None:
+            for bet in self.bets:
+                bet.set_working(False)
+            return
+        assert self.point in {4, 5, 6, 8, 9, 10}
+        for bet in self.bets:
+            bet.set_working(True)
+        already_placed_values = [b.value for b in self.bets]
+        for n in self._nums:
+            if n in already_placed_values:
+                continue
+            a = amount if n not in {6, 8} else amount * 1.2
+            self.add_bet(CBPlace(n, a))
