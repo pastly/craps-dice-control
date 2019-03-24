@@ -453,6 +453,23 @@ def test_place_nothing():
             assert strat.bankroll == starting_bankroll - amount
 
 
+def test_place_properties():
+    amount = 5
+    for value in {4, 5, 6, 8, 9, 10}:
+        bet = CBPlace(value, amount)
+        assert bet.value == value
+        assert bet.is_working
+        assert bet.amount == amount
+        if bet.value in {4, 10}:
+            assert bet.win_amount() == amount * 9 / 5
+        elif bet.value in {5, 9}:
+            assert bet.win_amount() == amount * 7 / 5
+        else:
+            assert bet.win_amount() == amount * 7 / 6
+        bet.set_working(False)
+        assert not bet.is_working
+
+
 def test_come_win():
     amount = 5
     starting_bankroll = 0

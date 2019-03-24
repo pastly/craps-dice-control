@@ -312,6 +312,11 @@ class CBPlace(CrapsBet):
         super().__init__(*a, **kw)
         self.roll_win = {value}
 
+    @property
+    def value(self):
+        assert len(self.roll_win) == 1
+        return list(self.roll_win)[0]
+
     def win_amount(self, *a, **kw):
         rw = self.roll_win
         assert len(rw) == 1
