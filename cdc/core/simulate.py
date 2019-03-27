@@ -52,7 +52,7 @@ def do_rollseries(args, stats):
 
 
 def f(_):
-    strat = strat_class(5, (0, 0, 0))
+    strat = make_new_strat()
     data_set = {}
     next_jump = 10
     for i, pair in enumerate(
@@ -67,22 +67,23 @@ def f(_):
     return data_set
 
 
-def _init_bankroll_globals(semaphore_, weights_, num_rolls_, strat_class_):
-    global semaphore, weights, num_rolls, strat_class
+def _init_bankroll_globals(semaphore_, weights_, num_rolls_, make_new_strat_):
+    global semaphore, weights, num_rolls, make_new_strat
     semaphore = semaphore_
     weights = weights_
     num_rolls = num_rolls_
-    strat_class = strat_class_
+    make_new_strat = make_new_strat_
 
 
-def bankroll_over_time_repeatedly(stats, strat_class, num_rolls, num_repeat):
+def bankroll_over_time_repeatedly(
+        stats, make_new_strat, num_rolls, num_repeat):
     weights = _calc_die_weights(stats)
     chunk_size = 32
     cpu_count = mp.cpu_count()
     semaphore = mp.Semaphore(chunk_size * cpu_count)
     with mp.Pool(
             initializer=_init_bankroll_globals,
-            initargs=(semaphore, weights, num_rolls, strat_class)) as pool:
+            initargs=(semaphore, weights, num_rolls, make_new_strat)) as pool:
         for res in pool.imap_unordered(f, range(num_repeat), chunk_size):
             yield res
             semaphore.release()
@@ -91,7 +92,9 @@ def bankroll_over_time_repeatedly(stats, strat_class, num_rolls, num_repeat):
 def do_bankroll(args, stats):
     count = 0
     for res in bankroll_over_time_repeatedly(
-            stats, ThreePointMolly, args.rolls, args.repeat):
+            stats,
+            lambda: ThreePointMolly(5, (3, 4, 5)),
+            args.rolls, args.repeat):
         json.dump(res, args.output)
         args.output.write('\n')
         count += 1

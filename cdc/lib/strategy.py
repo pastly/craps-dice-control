@@ -548,7 +548,7 @@ class BasicPlaceStrategy(Strategy):
 
 
 class ThreePointMolly(Strategy):
-    def __init__(self, base_bet, odds, *a, **kw):
+    def __init__(self, base_bet, odds, *a, num_comes=2, **kw):
         ''' Plays the 3-point molly strategy with max odds. Turns come odds off
         during come out rolls.
 
@@ -556,9 +556,15 @@ class ThreePointMolly(Strategy):
 
         odds is a list/tuple and contains three values: the max odds allowed on
         the 4/10, 5/9 and 6/8.
+
+        num_comes defaults to 2 and is the number of come bets you want to be
+        aiming for. 2 comes + 1 pass == 3 point molly. 5 means you're wanting
+        to get all values covered with pass/come bets. 6 means that, but then
+        put another come bet down to play continuous comes.
         '''
         self._base_bet = base_bet
         self._odds = odds
+        self._num_comes = num_comes
         super().__init__('ThreePointMollyStrat', *a, **kw)
 
     def _calc_odds_amount(self, point):
@@ -594,8 +600,8 @@ class ThreePointMolly(Strategy):
                 a = self._calc_odds_amount(self.point)
                 self.add_bet(CBOdds(come_bet.point, False, a))
         # Make come bet if needed
-        assert len(come_bets) <= 2
-        if len(come_bets) < 2:
+        assert len(come_bets) <= self._num_comes
+        if len(come_bets) < self._num_comes:
             self.add_bet(CBCome(amount))
         # Make sure all odds are working
         for bet in odds_bets:
