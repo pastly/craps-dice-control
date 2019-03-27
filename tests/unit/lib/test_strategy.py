@@ -1,6 +1,6 @@
 from cdc.lib.strategy import Strategy, CrapsRoll as R,\
     CBPass, CBDontPass, CBField, CBPlace, CBCome, CBDontCome, CBOdds,\
-    CGEBetWon, CGEBetLost, CGEBetConverted,\
+    CGEBetWon, CGEBetLost, CGEBetPush, CGEBetConverted,\
     CGEPointEstablished, CGEPointWon, CGEPointLost,\
     MartingaleFieldStrategy, BasicPassStrategy, BasicComeStrategy,\
     BasicPlaceStrategy
@@ -356,7 +356,7 @@ def test_dpass_nothing():
     amount = 5
     starting_bankroll = 0
     for roll in all_dice_combos():
-        if roll.value in {2, 3, 7, 11}:
+        if roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
         strat.add_bet(CBDontPass(amount))
@@ -368,6 +368,18 @@ def test_dpass_nothing():
         # Dont Pass bet should still exist
         assert len(strat.bets) == 1
         assert strat.bankroll == starting_bankroll - amount
+
+
+def test_dpass_push():
+    amount = 5
+    starting_bankroll = 0
+    strat = get_strat(starting_bankroll)
+    strat.add_bet(CBDontPass(amount))
+    evs = strat.after_roll(R(6, 6))
+    assert len(evs) == 1
+    assert isinstance(evs[0], CGEBetPush)
+    assert not len(strat.bets)
+    assert strat.bankroll == starting_bankroll
 
 
 def test_field_win():
@@ -675,6 +687,21 @@ def test_dcome_point_nothing():
             assert strat.bankroll == starting_bankroll - amount
 
 
+def test_dcome_push():
+    amount = 5
+    starting_bankroll = 0
+    strat = get_strat(starting_bankroll)
+    strat.after_roll(R(2, 2))
+    assert strat.point == 4
+    strat.add_bet(CBDontCome(amount))
+    assert strat.bankroll == starting_bankroll - amount
+    evs = strat.after_roll(R(6, 6))
+    assert len(evs) == 1
+    assert isinstance(evs[0], CGEBetPush)
+    assert not len(strat.bets)
+    assert strat.bankroll == starting_bankroll
+
+
 def test_odds_win():
     amount = 10
     starting_bankroll = 0
@@ -723,6 +750,39 @@ def test_odds_nothing():
             assert not len([e for e in evs if isinstance(e, CGEBetLost)])
             assert len(strat.bets) == 1
             assert strat.bankroll == starting_bankroll - amount
+
+
+def test_odds_push():
+    amount = 10
+    starting_bankroll = 0
+    for point in {4, 5, 6, 8, 9, 10}:
+        # Come odds are push if not working and 7 on come out
+        strat = get_strat(starting_bankroll)
+        bet = CBOdds(point, False, amount)
+        bet.set_working(False)
+        strat.add_bet(bet)
+        assert strat.point is None
+        assert strat.bankroll == starting_bankroll - amount
+        evs = strat.after_roll(R(3, 4))
+        assert len(evs) == 1
+        assert isinstance(evs[0], CGEBetPush)
+        assert not len(strat.bets)
+        assert strat.bankroll == starting_bankroll
+    for roll in all_dice_combos():
+        if roll.value not in {4, 5, 6, 8, 9, 10}:
+            continue
+        # Don't Come odds are push if not working and point is rolled on come
+        # out
+        strat = get_strat(starting_bankroll)
+        bet = CBOdds(roll.value, True, amount)
+        bet.set_working(False)
+        strat.add_bet(bet)
+        assert strat.point is None
+        assert strat.bankroll == starting_bankroll - amount
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetPush)]) == 1
+        assert not len(strat.bets)
+        assert strat.bankroll == starting_bankroll
 
 
 def test_dodds_win():

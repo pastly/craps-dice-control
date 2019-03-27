@@ -61,6 +61,46 @@ class Strategy:
         self._bets = [b for b in self.bets if b not in remove_bets]
         return evs
 
+    def _handle_pushers(self):
+        ''' Return bets that push. Also refund their value to the bankroll '''
+        evs = []
+        remove_bets = []
+        refund_amount = 0
+        for bet in self.bets:
+            if self.point is None:
+                # Come out roll.
+                # - Don't Pass is push on 12
+                # - Come odds push if off and 7
+                # - Don't Come odds push if off and roll == bet.point
+                if self.last_roll.value == 12 and isinstance(bet, CBDontPass):
+                    remove_bets.append(bet)
+                    refund_amount += bet.amount
+                    evs.append(CGEBetPush(bet))
+                elif isinstance(bet, CBOdds) and not bet.is_dont \
+                        and not bet.is_working \
+                        and self.last_roll.value == 7:
+                    remove_bets.append(bet)
+                    refund_amount += bet.amount
+                    evs.append(CGEBetPush(bet))
+                elif isinstance(bet, CBOdds) and bet.is_dont \
+                        and not bet.is_working \
+                        and self.last_roll.value == bet.point:
+                    remove_bets.append(bet)
+                    refund_amount += bet.amount
+                    evs.append(CGEBetPush(bet))
+                continue
+            assert self.point
+            # There is a point.
+            # - Don't Come is push on 12 if it doesn't have a point yet
+            if self.last_roll.value == 12 and isinstance(bet, CBDontCome) \
+                    and bet.point is None:
+                remove_bets.append(bet)
+                refund_amount += bet.amount
+                evs.append(CGEBetPush(bet))
+        self._bets = [b for b in self.bets if b not in remove_bets]
+        self._adjust_bankroll(refund_amount)
+        return evs
+
     def _convert_comes(self):
         evs = []
         remove_bets = []
@@ -97,6 +137,7 @@ class Strategy:
     def after_roll(self, roll):
         self._rolls.append(roll)
         evs = []
+        evs.extend(self._handle_pushers())
         evs.extend(self._handle_winners_and_losers())
         evs.extend(self._convert_comes())
         evs.extend(self._adjust_point())
@@ -277,14 +318,18 @@ class CBOdds(CrapsBet):
     def point(self):
         return self._point
 
+    @property
+    def is_dont(self):
+        return self._is_dont
+
     def win_amount(self, *a, **kw):
         if self.point in {4, 10}:
-            ratio = 1 / 2 if self._is_dont else 2 / 1
+            ratio = 1 / 2 if self.is_dont else 2 / 1
             return self.amount * ratio
         elif self.point in {5, 9}:
-            ratio = 2 / 3 if self._is_dont else 3 / 2
+            ratio = 2 / 3 if self.is_dont else 3 / 2
             return self.amount * ratio
-        ratio = 5 / 6 if self._is_dont else 6 / 5
+        ratio = 5 / 6 if self.is_dont else 6 / 5
         return self.amount * ratio
 
 
@@ -364,6 +409,17 @@ class CGEBetLost(CGEWithBets):
 
     def __str__(self):
         return 'Lost<%s>' % str(self.bet)
+
+    @property
+    def bet(self):
+        return self._bets[0]
+
+
+class CGEBetPush(CGEWithBets):
+    name = 'BetPush'
+
+    def __str__(self):
+        return 'Push<%s>' & str(self.bet)
 
     @property
     def bet(self):
