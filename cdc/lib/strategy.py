@@ -6,6 +6,14 @@ _POINT_VALUES = {4, 5, 6, 8, 9, 10}
 log = logging.getLogger(__name__)
 
 
+class IllegalBetChange(TypeError):
+    pass
+
+
+class IllegalBet(TypeError):
+    pass
+
+
 class Strategy:
     def __init__(self, name, bankroll=0):
         self._name = name
@@ -143,8 +151,24 @@ class Strategy:
         evs.extend(self._adjust_point())
         return evs
 
+    def _can_make_bet(self, b):
+        # if no point, cannot make come-type bets
+        if self.point is None:
+            if isinstance(b, CBCome) or isinstance(b, CBDontCome):
+                return False, 'Cannot make (Don\'t) Come bet during '\
+                    'come out roll'
+        # if point, cannot make pass-type bets
+        if self.point is not None:
+            if isinstance(b, CBPass) or isinstance(b, CBDontPass):
+                return False, 'Can only make (Don\'t) Pass bet during '\
+                    'come out roll'
+        return True, ''
+
     def add_bet(self, b, is_free=False):
         assert isinstance(b, CrapsBet)
+        allowed, reason = self._can_make_bet(b)
+        if not allowed:
+            raise IllegalBet(reason)
         if not is_free:
             self._adjust_bankroll(-1 * b.amount)
         self._bets.append(b)
@@ -215,7 +239,17 @@ class CrapsBet:
         raise NotImplementedError
 
 
-class CBPass(CrapsBet):
+class CBNoOffMixin:
+    def set_working(self, working, *a, **kw):
+        if not working:
+            raise IllegalBetChange()
+
+
+class CBContractMixin(CBNoOffMixin):
+    pass
+
+
+class CBPass(CBContractMixin, CrapsBet):
     name = 'Pass'
     roll_win = {7, 11}
     roll_lose = {2, 3, 12}
@@ -232,7 +266,7 @@ class CBPass(CrapsBet):
             if point is None else roll.value == 7
 
 
-class CBDontPass(CrapsBet):
+class CBDontPass(CBContractMixin, CrapsBet):
     name = 'DontPass'
     roll_win = {2, 3}
     roll_lose = {7, 11}
@@ -249,7 +283,7 @@ class CBDontPass(CrapsBet):
             if point is None else roll.value == point
 
 
-class CBCome(CrapsBet):
+class CBCome(CBContractMixin, CrapsBet):
     name = 'Come'
     roll_win = {7, 11}
     roll_lose = {2, 3, 12}
@@ -273,7 +307,7 @@ class CBCome(CrapsBet):
         return self._point
 
 
-class CBDontCome(CrapsBet):
+class CBDontCome(CBContractMixin, CrapsBet):
     name = 'DontCome'
     roll_win = {2, 3}
     roll_lose = {7, 11}
@@ -333,7 +367,7 @@ class CBOdds(CrapsBet):
         return self.amount * ratio
 
 
-class CBField(CrapsBet):
+class CBField(CBNoOffMixin, CrapsBet):
     name = 'Field'
     roll_win = {2, 3, 4, 9, 10, 11, 12}
     roll_lose = {5, 6, 7, 8}

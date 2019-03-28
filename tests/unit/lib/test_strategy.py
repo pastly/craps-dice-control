@@ -1,11 +1,12 @@
 from cdc.lib.strategy import Strategy, CrapsRoll as R,\
     CBPass, CBDontPass, CBField, CBPlace, CBCome, CBDontCome, CBOdds,\
     CGEBetWon, CGEBetLost, CGEBetPush, CGEBetConverted,\
-    CGEPointEstablished, CGEPointWon, CGEPointLost,\
+    CGEPoint, CGEPointEstablished, CGEPointWon, CGEPointLost,\
     MartingaleFieldStrategy, BasicPassStrategy, BasicComeStrategy,\
-    BasicPlaceStrategy
+    BasicPlaceStrategy,\
+    IllegalBet, IllegalBetChange
 
-# import pytest
+import pytest
 
 
 def get_strat(bankroll=0):
@@ -78,11 +79,11 @@ def test_bet_on():
 def test_bet_off():
     # A not working bet avoids losing
     strat = get_strat()
-    strat.add_bet(CBPass(5))
+    strat.add_bet(CBPlace(4, 25))
     assert len(strat.bets) == 1
     strat.bets[0].set_working(False)
     assert not strat.bets[0].is_working
-    strat.after_roll(R(1, 1))
+    strat.after_roll(R(3, 4))
     assert len(strat.bets) == 1
 
 
@@ -488,6 +489,8 @@ def test_come_win():
     starting_bankroll = 0
     for roll in {R(3, 4), R(5, 6)}:
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
@@ -500,6 +503,8 @@ def test_come_lose():
     starting_bankroll = 0
     for roll in {R(1, 1), R(1, 2), R(6, 6)}:
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
@@ -514,6 +519,8 @@ def test_come_convert():
         if roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBCome(amount))
         assert strat.bets[0].point is None
         evs = strat.after_roll(roll)
@@ -525,24 +532,6 @@ def test_come_convert():
         assert strat.bankroll == starting_bankroll - amount
 
 
-def test_come_off_convert():
-    ''' A come bet that is not working (whatever that means in the real world)
-    should not get converted '''
-    amount = 5
-    starting_bankroll = 0
-    for roll in all_dice_combos():
-        if roll.value in {2, 3, 7, 11, 12}:
-            continue
-        strat = get_strat(starting_bankroll)
-        bet = CBCome(amount)
-        bet.set_working(False)
-        strat.add_bet(bet)
-        evs = strat.after_roll(roll)
-        assert not len([e for e in evs if isinstance(e, CGEBetConverted)])
-        bet_out = strat.bets[0]
-        assert bet == bet_out
-
-
 def test_come_point_win():
     amount = 5
     starting_bankroll = 0
@@ -550,6 +539,8 @@ def test_come_point_win():
         if roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
@@ -566,6 +557,8 @@ def test_come_point_lose():
         if roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
@@ -582,6 +575,8 @@ def test_come_point_nothing():
         if first_roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBCome(amount))
         evs = strat.after_roll(first_roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
@@ -589,7 +584,11 @@ def test_come_point_nothing():
             if second_roll.value in {first_roll.value, 7}:
                 continue
             evs = strat.after_roll(second_roll)
-            assert not len(evs)
+            assert len(evs) <= 1
+            if len(evs) == 1:
+                assert isinstance(evs[0], CGEPoint)
+                # assert isinstance(evs[0], CGEPointWon) \
+                #     or isinstance(evs[0], CGEPointEstablished)
             assert len(strat.bets) == 1
             assert strat.bankroll == starting_bankroll - amount
 
@@ -599,6 +598,8 @@ def test_dcome_win():
     starting_bankroll = 0
     for roll in {R(1, 1), R(1, 2)}:
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBDontCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
@@ -611,6 +612,8 @@ def test_dcome_lose():
     starting_bankroll = 0
     for roll in {R(3, 4), R(5, 6)}:
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBDontCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
@@ -625,6 +628,8 @@ def test_dcome_convert():
         if roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBDontCome(amount))
         assert strat.bets[0].point is None
         evs = strat.after_roll(roll)
@@ -643,6 +648,8 @@ def test_dcome_point_win():
         if roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBDontCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
@@ -659,6 +666,8 @@ def test_dcome_point_lose():
         if roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBDontCome(amount))
         evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
@@ -675,6 +684,8 @@ def test_dcome_point_nothing():
         if first_roll.value in {2, 3, 7, 11, 12}:
             continue
         strat = get_strat(starting_bankroll)
+        # set a point so come bets are legal
+        strat.after_roll(R(2, 2))
         strat.add_bet(CBDontCome(amount))
         evs = strat.after_roll(first_roll)
         assert len([e for e in evs if isinstance(e, CGEBetConverted)]) == 1
@@ -682,7 +693,9 @@ def test_dcome_point_nothing():
             if second_roll.value in {first_roll.value, 7}:
                 continue
             evs = strat.after_roll(second_roll)
-            assert not len(evs)
+            assert len(evs) <= 1
+            if len(evs) == 1:
+                assert isinstance(evs[0], CGEPoint)
             assert len(strat.bets) == 1
             assert strat.bankroll == starting_bankroll - amount
 
@@ -831,6 +844,106 @@ def test_dodds_nothing():
             assert not len([e for e in evs if isinstance(e, CGEBetLost)])
             assert len(strat.bets) == 1
             assert strat.bankroll == starting_bankroll - amount
+
+
+def test_impossible_bets_come():
+    ''' Can't make come bet if game has no point '''
+    strat = get_strat(0)
+    bet = CBCome(5)
+    assert strat.point is None
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+
+
+def test_impossible_bets_dcome():
+    ''' Can't make dont come bet if game has no point '''
+    strat = get_strat(0)
+    bet = CBDontCome(5)
+    assert strat.point is None
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+
+
+def test_impossible_bets_pass():
+    ''' Can't make pass bet if game has a point '''
+    strat = get_strat(0)
+    strat.after_roll(R(1, 3))
+    assert strat.point == 4
+    bet = CBPass(5)
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+
+
+def test_impossible_bets_dpass():
+    ''' Can't make dpass bet if game has a point '''
+    strat = get_strat(0)
+    strat.after_roll(R(1, 3))
+    assert strat.point == 4
+    bet = CBDontPass(5)
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+
+
+# def test_impossible_bets_come_point():
+#     assert False, 'impossible to make a come bet with a point already set'
+#
+#
+# def test_impossible_bets_dcome_point():
+#     assert False, 'impossible to make a dcome bet with a point already set'
+#
+#
+# def test_impossible_bets_pass_odds():
+#     assert False, 'impossible to make a pass odds bet without corresponding '\
+#         'pass existing'
+#
+#
+# def test_impossible_bets_dpass_odds():
+#     assert False, 'impossible to make a dpass odds bet without corresponding '\
+#         'dpass existing'
+#
+#
+# def test_impossible_bets_come_odds():
+#     assert False, 'impossible to make a come odds bet without corresponding '\
+#         'come existing'
+#
+#
+# def test_impossible_bets_dcome_odds():
+#     assert False, 'impossible to make a dcome odds bet without corresponding '\
+#         'dcome existing'
+
+
+def test_impossible_bets_off_pass():
+    ''' Cannot turn pass off '''
+    bet = CBPass(5)
+    with pytest.raises(IllegalBetChange):
+        bet.set_working(False)
+
+
+def test_impossible_bets_off_dpass():
+    ''' Cannot turn dpass off '''
+    bet = CBDontPass(5)
+    with pytest.raises(IllegalBetChange):
+        bet.set_working(False)
+
+
+def test_impossible_bets_off_come():
+    ''' Cannot turn come off '''
+    bet = CBCome(5)
+    with pytest.raises(IllegalBetChange):
+        bet.set_working(False)
+
+
+def test_impossible_bets_off_dcome():
+    ''' Cannot turn dcome off '''
+    bet = CBDontCome(5)
+    with pytest.raises(IllegalBetChange):
+        bet.set_working(False)
+
+
+def test_impossible_bets_off_field():
+    bet = CBField(5)
+    with pytest.raises(IllegalBetChange):
+        bet.set_working(False)
 
 
 def test_martingale_field_strat():
