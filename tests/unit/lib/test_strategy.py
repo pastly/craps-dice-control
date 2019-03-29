@@ -934,14 +934,30 @@ def test_impossible_bets_dpass():
         strat.add_bet(bet)
 
 
-# def test_impossible_bets_come_point():
-#     assert False, 'impossible to make a come bet with a point already set'
-#
-#
-# def test_impossible_bets_dcome_point():
-#     assert False, 'impossible to make a dcome bet with a point already set'
-#
-#
+def test_impossible_bets_come_point():
+    ''' Making a come bet that has its own point set already should be illegal
+    '''
+    bet = CBCome(5)
+    bet.set_point(9)
+    strat = get_strat(0)
+    # establish point so come bets are legal
+    strat.after_roll(R(1, 3))
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+
+
+def test_impossible_bets_dcome_point():
+    ''' Making a dcome bet that has its own point set already should be illegal
+    '''
+    bet = CBDontCome(5)
+    bet.set_point(9)
+    strat = get_strat(0)
+    # establish point so come bets are legal
+    strat.after_roll(R(1, 3))
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+
+
 # def test_impossible_bets_pass_odds():
 #     assert False, 'impossible to make a pass odds bet without corresponding '\
 #         'pass existing'

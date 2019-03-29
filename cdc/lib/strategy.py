@@ -111,6 +111,7 @@ class Strategy:
 
     def _convert_comes(self):
         evs = []
+        add_bets = []
         remove_bets = []
         for bet in self.bets:
             if not isinstance(bet, CBCome) and not isinstance(bet, CBDontCome):
@@ -124,9 +125,10 @@ class Strategy:
             new_bet = copy(bet)
             new_bet.set_point(self.last_roll.value)
             remove_bets.append(bet)
-            self.add_bet(new_bet, is_free=True)
+            add_bets.append(new_bet)
             evs.append(CGEBetConverted(bet, new_bet))
         self._bets = [b for b in self.bets if b not in remove_bets]
+        self._bets.extend(add_bets)
         return evs
 
     def _adjust_point(self):
@@ -162,15 +164,20 @@ class Strategy:
             if isinstance(b, CBPass) or isinstance(b, CBDontPass):
                 return False, 'Can only make (Don\'t) Pass bet during '\
                     'come out roll'
+        # if (don't) come, it cannot have a point value associated with it
+        # already
+        if (isinstance(b, CBCome) or isinstance(b, CBDontCome)) \
+                and b.point is not None:
+            return False, 'Can not make a (Don\'t) Come bet with an '\
+                'associated point already set'
         return True, ''
 
-    def add_bet(self, b, is_free=False):
+    def add_bet(self, b):
         assert isinstance(b, CrapsBet)
         allowed, reason = self._can_make_bet(b)
         if not allowed:
             raise IllegalBet(reason)
-        if not is_free:
-            self._adjust_bankroll(-1 * b.amount)
+        self._adjust_bankroll(-1 * b.amount)
         self._bets.append(b)
 
     def make_bets(self):
