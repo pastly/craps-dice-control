@@ -393,6 +393,7 @@ class CBPlace(CrapsBet):
     def __init__(self, value, *a, **kw):
         super().__init__(*a, **kw)
         self.roll_win = {value}
+        self.name += str(value)
 
     @property
     def value(self):
@@ -408,6 +409,34 @@ class CBPlace(CrapsBet):
         elif 5 in rw or 9 in rw:
             return self.amount * 7 / 5
         return self.amount * 7 / 6
+
+
+class CBHardWay(CrapsBet):
+    name = 'Hard'
+    roll_win = None
+    roll_lose = None
+
+    def __init__(self, value, *a, **kw):
+        super().__init__(*a, **kw)
+        assert value in {4, 6, 8, 10}
+        self._value = value
+        self.name += str(self.value)
+
+    @property
+    def value(self):
+        return self._value
+
+    def is_winner(self, roll, *a):
+        return roll.value == self.value and roll.dice[0] == roll.dice[1]
+
+    def is_loser(self, roll, *a):
+        return roll.value == 7 or \
+            roll.value == self.value and roll.dice[0] != roll.dice[1]
+
+    def win_amount(self, *a, **kw):
+        if self.value in {4, 10}:
+            return 7 * self.amount
+        return 9 * self.amount
 
 
 class CrapsGameEvent:

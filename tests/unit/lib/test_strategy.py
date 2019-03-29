@@ -1,6 +1,7 @@
 from cdc.lib.strategy import Strategy, CrapsRoll as R,\
     CBPass, CBDontPass, CBField, CBPlace, CBCome, CBDontCome, CBOdds,\
-    CGEBetWon, CGEBetLost, CGEBetPush, CGEBetConverted,\
+    CBHardWay,\
+    CGEWithBets, CGEBetWon, CGEBetLost, CGEBetPush, CGEBetConverted,\
     CGEPoint, CGEPointEstablished, CGEPointWon, CGEPointLost,\
     MartingaleFieldStrategy, BasicPassStrategy, BasicComeStrategy,\
     BasicPlaceStrategy,\
@@ -842,6 +843,55 @@ def test_dodds_nothing():
             evs = strat.after_roll(roll)
             assert not len([e for e in evs if isinstance(e, CGEBetWon)])
             assert not len([e for e in evs if isinstance(e, CGEBetLost)])
+            assert len(strat.bets) == 1
+            assert strat.bankroll == starting_bankroll - amount
+
+
+def test_hardways_win():
+    amount = 1
+    starting_bankroll = 0
+    for roll in {R(2, 2), R(3, 3), R(4, 4), R(5, 5)}:
+        expected_bankroll = starting_bankroll + \
+            7 if roll.value in {4, 10} else 9
+        strat = get_strat(starting_bankroll)
+        bet = CBHardWay(roll.value, amount)
+        strat.add_bet(bet)
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
+        assert not len(strat.bets)
+        assert strat.bankroll == expected_bankroll
+
+
+def test_hardways_lose():
+    amount = 1
+    starting_bankroll = 0
+    for bet_value in {4, 6, 8, 10}:
+        for roll in all_dice_combos():
+            if roll.value not in {bet_value, 7}:
+                continue
+            if roll.dice[0] == roll.dice[1]:
+                continue
+            strat = get_strat(starting_bankroll)
+            bet = CBHardWay(bet_value, amount)
+            strat.add_bet(bet)
+            evs = strat.after_roll(roll)
+            assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
+            assert not len(strat.bets)
+            assert strat.bankroll == starting_bankroll - amount
+
+
+def test_hardways_nothing():
+    amount = 1
+    starting_bankroll = 0
+    for bet_value in {4, 6, 8, 10}:
+        for roll in all_dice_combos():
+            if roll.value in {bet_value, 7}:
+                continue
+            strat = get_strat(starting_bankroll)
+            bet = CBHardWay(bet_value, amount)
+            strat.add_bet(bet)
+            evs = strat.after_roll(roll)
+            assert not len([e for e in evs if isinstance(e, CGEWithBets)])
             assert len(strat.bets) == 1
             assert strat.bankroll == starting_bankroll - amount
 
