@@ -717,134 +717,326 @@ def test_dcome_push():
 
 
 def test_odds_win():
+    flat_amount = 5
     amount = 10
     starting_bankroll = 0
+    # Pass odds
     for roll in all_dice_combos():
         if roll.value not in {4, 5, 6, 8, 9, 10}:
             continue
         strat = get_strat(starting_bankroll)
+        strat.add_bet(CBPass(flat_amount))
+        # set point
+        strat.after_roll(roll)
+        assert strat.point == roll.value
+        # make odds bet
         strat.add_bet(CBOdds(roll.value, False, amount))
         evs = strat.after_roll(roll)
-        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 2
         assert not len(strat.bets)
         if roll.value in {4, 10}:
-            expected = starting_bankroll + amount * 2 / 1
+            expected = starting_bankroll + flat_amount + amount * 2 / 1
         elif roll.value in {5, 9}:
-            expected = starting_bankroll + amount * 3 / 2
+            expected = starting_bankroll + flat_amount + amount * 3 / 2
         else:
-            expected = starting_bankroll + amount * 6 / 5
+            expected = starting_bankroll + flat_amount + amount * 6 / 5
+        assert strat.bankroll == expected
+    # Come odds
+    for roll in all_dice_combos():
+        if roll.value not in {4, 5, 6, 8, 9, 10}:
+            continue
+        strat = get_strat(starting_bankroll)
+        # Set a point so come bets are legal
+        strat.after_roll(R(2, 3 if roll.value != 5 else 2))
+        assert strat.point is not None
+        # Make that flat bet
+        strat.add_bet(CBCome(flat_amount))
+        # And set its point so a come odds bet is legal
+        strat.after_roll(roll)
+        # Hack to make sure its point is set
+        assert sum([b.point for b in strat.bets if isinstance(b, CBCome)]) \
+            == roll.value
+        # Finally add the odds bet
+        strat.add_bet(CBOdds(roll.value, False, amount))
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 2
+        assert not len(strat.bets)
+        if roll.value in {4, 10}:
+            expected = starting_bankroll + flat_amount + amount * 2 / 1
+        elif roll.value in {5, 9}:
+            expected = starting_bankroll + flat_amount + amount * 3 / 2
+        else:
+            expected = starting_bankroll + flat_amount + amount * 6 / 5
         assert strat.bankroll == expected
 
 
 def test_odds_lose():
+    flat_amount = 5
     amount = 10
     starting_bankroll = 0
+    # Pass odds
     for roll in all_dice_combos():
         if roll.value not in {4, 5, 6, 8, 9, 10}:
             continue
         strat = get_strat(starting_bankroll)
+        strat.add_bet(CBPass(flat_amount))
+        # set point
+        strat.after_roll(roll)
+        assert strat.point == roll.value
+        # make odds bet
         strat.add_bet(CBOdds(roll.value, False, amount))
         evs = strat.after_roll(R(3, 4))
-        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
+        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 2
         assert not len(strat.bets)
-        assert strat.bankroll == starting_bankroll - amount
+        assert strat.bankroll == starting_bankroll - flat_amount - amount
+    # Come odds
+    for roll in all_dice_combos():
+        if roll.value not in {4, 5, 6, 8, 9, 10}:
+            continue
+        strat = get_strat(starting_bankroll)
+        # Set a point so come bets are legal
+        strat.after_roll(R(2, 3 if roll.value != 5 else 2))
+        assert strat.point is not None
+        # Make that flat bet
+        strat.add_bet(CBCome(flat_amount))
+        # And set its point so a come odds bet is legal
+        strat.after_roll(roll)
+        # Hack to make sure its point is set
+        assert sum([b.point for b in strat.bets if isinstance(b, CBCome)]) \
+            == roll.value
+        # Finally add the odds bet
+        strat.add_bet(CBOdds(roll.value, False, amount))
+        evs = strat.after_roll(R(3, 4))
+        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 2
+        assert not len(strat.bets)
+        assert strat.bankroll == starting_bankroll - flat_amount - amount
 
 
 def test_odds_nothing():
+    flat_amount = 5
     amount = 10
     starting_bankroll = 0
-    for point in {4, 5, 6, 8, 9, 10}:
-        for roll in all_dice_combos():
-            if roll.value in {point, 7}:
+    for first_roll in {R(1, 3), R(1, 4), R(1, 5), R(2, 6), R(3, 6), R(4, 6)}:
+        for second_roll in all_dice_combos():
+            if second_roll.value in {first_roll.value, 7}:
                 continue
             strat = get_strat(starting_bankroll)
-            strat.add_bet(CBOdds(point, False, amount))
-            evs = strat.after_roll(roll)
+            # Make flat bet
+            strat.add_bet(CBPass(flat_amount))
+            # Establish point so pass odds are legal
+            strat.after_roll(first_roll)
+            # Make odds bet
+            strat.add_bet(CBOdds(first_roll.value, False, amount))
+            evs = strat.after_roll(second_roll)
             assert not len([e for e in evs if isinstance(e, CGEBetWon)])
             assert not len([e for e in evs if isinstance(e, CGEBetLost)])
-            assert len(strat.bets) == 1
-            assert strat.bankroll == starting_bankroll - amount
+            assert len(strat.bets) == 2
+            assert strat.bankroll == starting_bankroll - flat_amount - amount
 
 
 def test_odds_push():
+    flat_amount = 5
     amount = 10
     starting_bankroll = 0
-    for point in {4, 5, 6, 8, 9, 10}:
-        # Come odds are push if not working and 7 on come out
+    for come_point in {4, 5, 6, 8, 9, 10}:
+        come_roll = R(
+            int(come_point / 2),
+            int(come_point / 2) + come_point % 2)
+        pass_point = 4 if come_point != 4 else 5
+        pass_roll = R(2, 2 if pass_point == 4 else 3)
         strat = get_strat(starting_bankroll)
-        bet = CBOdds(point, False, amount)
-        bet.set_working(False)
-        strat.add_bet(bet)
+        # set a point so come bets are legal
+        strat.after_roll(pass_roll)
+        assert strat.point is pass_point
+        # make a come bet and make it travel to its point
+        strat.add_bet(CBCome(flat_amount))
+        strat.after_roll(come_roll)
+        # Make the come odds bet
+        strat.add_bet(CBOdds(come_point, False, amount))
+        assert len(strat.bets) == 2
+        # Win the pass line point (no bet on it, just so puck goes off)
+        strat.after_roll(pass_roll)
         assert strat.point is None
-        assert strat.bankroll == starting_bankroll - amount
+        # Come odds should still be working (because that's how it's coded. It
+        # isn't like real life where dealers will turn them off by default) so
+        # we need to turn them off
+        assert len(strat.bets) == 2
+        for bet in [b for b in strat.bets if isinstance(b, CBOdds)]:
+            assert bet.is_working
+            bet.set_working(False)
+        # Hack to assure the bet is off
+        assert len([b for b in strat.bets if isinstance(b, CBOdds)]) == 1
+        assert not sum(
+            int(b.is_working) for b in strat.bets if isinstance(b, CBOdds))
+        # Roll 7 on come out roll. Come will lose, Come Odds will push
         evs = strat.after_roll(R(3, 4))
-        assert len(evs) == 1
-        assert isinstance(evs[0], CGEBetPush)
-        assert not len(strat.bets)
-        assert strat.bankroll == starting_bankroll
-    for roll in all_dice_combos():
-        if roll.value not in {4, 5, 6, 8, 9, 10}:
-            continue
-        # Don't Come odds are push if not working and point is rolled on come
-        # out
-        strat = get_strat(starting_bankroll)
-        bet = CBOdds(roll.value, True, amount)
-        bet.set_working(False)
-        strat.add_bet(bet)
-        assert strat.point is None
-        assert strat.bankroll == starting_bankroll - amount
-        evs = strat.after_roll(roll)
         assert len([e for e in evs if isinstance(e, CGEBetPush)]) == 1
         assert not len(strat.bets)
-        assert strat.bankroll == starting_bankroll
+        # Should be down just the flat amount. AKA should get the odds back in
+        # our bankroll
+        assert strat.bankroll == starting_bankroll - flat_amount
 
 
 def test_dodds_win():
+    flat_amount = 5
     amount = 30
-    starting_bankroll = 30
-    for point in {4, 5, 6, 8, 9, 10}:
+    starting_bankroll = 0
+    # Don't Pass odds
+    for roll in all_dice_combos():
+        if roll.value not in {4, 5, 6, 8, 9, 10}:
+            continue
         strat = get_strat(starting_bankroll)
-        strat.add_bet(CBOdds(point, True, amount))
+        strat.add_bet(CBDontPass(flat_amount))
+        # set point
+        strat.after_roll(roll)
+        assert strat.point == roll.value
+        # make odds bet
+        strat.add_bet(CBOdds(roll.value, True, amount))
         evs = strat.after_roll(R(3, 4))
-        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 1
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 2
         assert not len(strat.bets)
-        if point in {4, 10}:
-            expected = starting_bankroll + amount * 1 / 2
-        elif point in {5, 9}:
-            expected = starting_bankroll + amount * 2 / 3
+        if roll.value in {4, 10}:
+            expected = starting_bankroll + flat_amount + amount * 1 / 2
+        elif roll.value in {5, 9}:
+            expected = starting_bankroll + flat_amount + amount * 2 / 3
         else:
-            expected = starting_bankroll + amount * 5 / 6
+            expected = starting_bankroll + flat_amount + amount * 5 / 6
+        assert strat.bankroll == expected
+    # Don't Come odds
+    for roll in all_dice_combos():
+        if roll.value not in {4, 5, 6, 8, 9, 10}:
+            continue
+        strat = get_strat(starting_bankroll)
+        # Set a point so come bets are legal
+        strat.after_roll(R(2, 3 if roll.value != 5 else 2))
+        assert strat.point is not None
+        # Make that flat bet
+        strat.add_bet(CBDontCome(flat_amount))
+        # And set its point so a come odds bet is legal
+        strat.after_roll(roll)
+        # Hack to make sure its point is set
+        assert sum([b.point for b in strat.bets
+                    if isinstance(b, CBDontCome)]) == roll.value
+        # Finally add the odds bet
+        strat.add_bet(CBOdds(roll.value, True, amount))
+        evs = strat.after_roll(R(3, 4))
+        assert len([e for e in evs if isinstance(e, CGEBetWon)]) == 2
+        assert not len(strat.bets)
+        if roll.value in {4, 10}:
+            expected = starting_bankroll + flat_amount + amount * 1 / 2
+        elif roll.value in {5, 9}:
+            expected = starting_bankroll + flat_amount + amount * 2 / 3
+        else:
+            expected = starting_bankroll + flat_amount + amount * 5 / 6
         assert strat.bankroll == expected
 
 
 def test_dodds_lose():
-    amount = 30
+    flat_amount = 5
+    amount = 10
     starting_bankroll = 0
+    # Pass odds
     for roll in all_dice_combos():
         if roll.value not in {4, 5, 6, 8, 9, 10}:
             continue
         strat = get_strat(starting_bankroll)
+        strat.add_bet(CBDontPass(flat_amount))
+        # set point
+        strat.after_roll(roll)
+        assert strat.point == roll.value
+        # make odds bet
         strat.add_bet(CBOdds(roll.value, True, amount))
         evs = strat.after_roll(roll)
-        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 1
+        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 2
         assert not len(strat.bets)
-        assert strat.bankroll == starting_bankroll - amount
+        assert strat.bankroll == starting_bankroll - flat_amount - amount
+    # Come odds
+    for roll in all_dice_combos():
+        if roll.value not in {4, 5, 6, 8, 9, 10}:
+            continue
+        strat = get_strat(starting_bankroll)
+        # Set a point so come bets are legal
+        strat.after_roll(R(2, 3 if roll.value != 5 else 2))
+        assert strat.point is not None
+        # Make that flat bet
+        strat.add_bet(CBDontCome(flat_amount))
+        # And set its point so a come odds bet is legal
+        strat.after_roll(roll)
+        # Hack to make sure its point is set
+        assert sum([b.point for b in strat.bets
+                    if isinstance(b, CBDontCome)]) == roll.value
+        # Finally add the odds bet
+        strat.add_bet(CBOdds(roll.value, True, amount))
+        evs = strat.after_roll(roll)
+        assert len([e for e in evs if isinstance(e, CGEBetLost)]) == 2
+        assert not len(strat.bets)
+        assert strat.bankroll == starting_bankroll - flat_amount - amount
 
 
 def test_dodds_nothing():
+    flat_amount = 5
     amount = 10
     starting_bankroll = 0
-    for point in {4, 5, 6, 8, 9, 10}:
-        for roll in all_dice_combos():
-            if roll.value in {point, 7}:
+    for first_roll in {R(1, 3), R(1, 4), R(1, 5), R(2, 6), R(3, 6), R(4, 6)}:
+        for second_roll in all_dice_combos():
+            if second_roll.value in {first_roll.value, 7}:
                 continue
             strat = get_strat(starting_bankroll)
-            strat.add_bet(CBOdds(point, True, amount))
-            evs = strat.after_roll(roll)
+            # Make flat bet
+            strat.add_bet(CBDontPass(flat_amount))
+            # Establish point so pass odds are legal
+            strat.after_roll(first_roll)
+            # Make odds bet
+            strat.add_bet(CBOdds(first_roll.value, True, amount))
+            evs = strat.after_roll(second_roll)
             assert not len([e for e in evs if isinstance(e, CGEBetWon)])
             assert not len([e for e in evs if isinstance(e, CGEBetLost)])
-            assert len(strat.bets) == 1
-            assert strat.bankroll == starting_bankroll - amount
+            assert len(strat.bets) == 2
+            assert strat.bankroll == starting_bankroll - flat_amount - amount
+
+
+def test_dodds_push():
+    flat_amount = 5
+    amount = 10
+    starting_bankroll = 0
+    for dcome_point in {4, 5, 6, 8, 9, 10}:
+        dcome_roll = R(
+            int(dcome_point / 2),
+            int(dcome_point / 2) + dcome_point % 2)
+        pass_point = 4 if dcome_point != 4 else 5
+        pass_roll = R(2, 2 if pass_point == 4 else 3)
+        strat = get_strat(starting_bankroll)
+        # set a point so dcome bets are legal
+        strat.after_roll(pass_roll)
+        assert strat.point is pass_point
+        # make a dcome bet and make it travel to its point
+        strat.add_bet(CBDontCome(flat_amount))
+        strat.after_roll(dcome_roll)
+        # Make the dcome odds bet
+        strat.add_bet(CBOdds(dcome_point, True, amount))
+        assert len(strat.bets) == 2
+        # Win the pass line point (no bet on it, just so puck goes off)
+        strat.after_roll(pass_roll)
+        assert strat.point is None
+        # Dont Come odds should still be working (because that's how it's
+        # coded. It isn't like real life where dealers will turn them off by
+        # default) so we need to turn them off
+        assert len(strat.bets) == 2
+        for bet in [b for b in strat.bets if isinstance(b, CBOdds)]:
+            assert bet.is_working
+            bet.set_working(False)
+        # Hack to assure the bet is off
+        assert len([b for b in strat.bets if isinstance(b, CBOdds)]) == 1
+        assert not sum(
+            int(b.is_working) for b in strat.bets if isinstance(b, CBOdds))
+        # Roll the Don't Come's point on come out roll. Don't Come will lose,
+        # Don't Come Odds will push
+        evs = strat.after_roll(dcome_roll)
+        assert len([e for e in evs if isinstance(e, CGEBetPush)]) == 1
+        assert not len(strat.bets)
+        # Should be down just the flat amount. AKA should get the odds back in
+        # our bankroll
+        assert strat.bankroll == starting_bankroll - flat_amount
 
 
 def test_hardways_win():
@@ -958,24 +1150,40 @@ def test_impossible_bets_dcome_point():
         strat.add_bet(bet)
 
 
-# def test_impossible_bets_pass_odds():
-#     assert False, 'impossible to make a pass odds bet without corresponding '\
-#         'pass existing'
-#
-#
-# def test_impossible_bets_dpass_odds():
-#     assert False, 'impossible to make a dpass odds bet without corresponding '\
-#         'dpass existing'
-#
-#
-# def test_impossible_bets_come_odds():
-#     assert False, 'impossible to make a come odds bet without corresponding '\
-#         'come existing'
-#
-#
-# def test_impossible_bets_dcome_odds():
-#     assert False, 'impossible to make a dcome odds bet without corresponding '\
-#         'dcome existing'
+def test_impossible_bets_passcome_odds():
+    ''' Impossible to make a Pass/Come Odds bet without corresponding Pass/Come
+    bet existing '''
+    amount = 10
+    # Pass odds
+    strat = get_strat(0)
+    bet = CBOdds(6, False, amount)
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+    # Come odds
+    strat = get_strat(0)
+    strat.after_roll(R(1, 3))
+    assert strat.point == 4
+    bet = CBOdds(6, False, amount)
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+
+
+def test_impossible_bets_dpass_odds():
+    ''' Impossible to make Don't Pass/Come Odds bet without corresponding
+    dpass/dcome bet existing '''
+    amount = 10
+    # Don't Pass odds
+    strat = get_strat(0)
+    bet = CBOdds(6, True, amount)
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
+    # Don't Come odds
+    strat = get_strat(0)
+    strat.after_roll(R(1, 3))
+    assert strat.point == 4
+    bet = CBOdds(6, True, amount)
+    with pytest.raises(IllegalBet):
+        strat.add_bet(bet)
 
 
 def test_impossible_bets_off_pass():

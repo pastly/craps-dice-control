@@ -162,14 +162,32 @@ class Strategy:
         # if point, cannot make pass-type bets
         if self.point is not None:
             if isinstance(b, CBPass) or isinstance(b, CBDontPass):
-                return False, 'Can only make (Don\'t) Pass bet during '\
+                return False, 'Cannot make (Don\'t) Pass bet during '\
                     'come out roll'
         # if (don't) come, it cannot have a point value associated with it
         # already
         if (isinstance(b, CBCome) or isinstance(b, CBDontCome)) \
                 and b.point is not None:
-            return False, 'Can not make a (Don\'t) Come bet with an '\
+            return False, 'Cannot make a (Don\'t) Come bet with an '\
                 'associated point already set'
+        # pass/come odds bet, cannot make it if there's not already a flat
+        # pass/come bet with its point value. Likewise for donts
+        if isinstance(b, CBOdds):
+            if b.point == self.point:
+                class_ = CBPass if not b.is_dont else CBDontPass
+                flat_bets = [b for b in self.bets if type(b) == class_]
+                if not len(flat_bets):
+                    return False, 'Cannot make (Don\'t) Pass Odds bet '\
+                        'without a (Don\'t) Pass existing for it'
+            else:
+                class_ = CBCome if not b.is_dont else CBDontCome
+                flat_bets = [b for b in self.bets if type(b) == class_]
+                for flat_bet in flat_bets:
+                    if flat_bet.point == b.point:
+                        break
+                else:
+                    return False, 'Cannot make (Don\'t) Come Odds bet '\
+                        'without a (Don\'t) Come existing for it'
         return True, ''
 
     def add_bet(self, b):
