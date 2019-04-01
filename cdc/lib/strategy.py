@@ -489,7 +489,7 @@ class CGEBetPush(CGEWithBets):
     name = 'BetPush'
 
     def __str__(self):
-        return 'Push<%s>' & str(self.bet)
+        return 'Push<%s>' % str(self.bet)
 
     @property
     def bet(self):
