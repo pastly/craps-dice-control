@@ -116,12 +116,19 @@ class Strategy:
         for bet in self.bets:
             if not isinstance(bet, CBCome) and not isinstance(bet, CBDontCome):
                 continue
-            if not bet.is_working:
-                continue
+            # Should be safe to assert that the bet is working. Other could
+            # should make it impossible to turn (d)come bets off, but if it
+            # were somehow possible to turn (d)come bets off, then we wouldn't
+            # want them to be converted
+            assert bet.is_working
             if bet.point is not None:
                 continue
-            if self.last_roll.value not in {4, 5, 6, 8, 9, 10}:
-                continue
+            # At the time of writing, we handle winners and losers before
+            # converting come bets. So that means if the roll is not a point
+            # number, the come bet has already won/lost and we won't end up
+            # here. Assert on the roll being a point number in case this ever
+            # changes.
+            assert self.last_roll.value in {4, 5, 6, 8, 9, 10}
             new_bet = copy(bet)
             new_bet.set_point(self.last_roll.value)
             remove_bets.append(bet)
