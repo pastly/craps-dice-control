@@ -57,7 +57,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Matt Traudt',
     author_email='sirmatt@ksu.edu',
-    license='MIT',
+    license='UNLICENSED',
     url='https://github.com/pastly/craps-dice-control',
     classifiers=[
         'Development Status :: 3 - Alpha',
