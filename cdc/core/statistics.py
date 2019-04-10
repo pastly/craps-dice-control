@@ -66,14 +66,27 @@ def calculate_all_statistics(roll_events):
     counts = {i: 0 for i in range(2, 12+1)}
     dice = {i: 0 for i in range(1, 6+1)}
     pairs = {i: {j: 0 for j in range(i, 6+1)} for i in range(1, 6+1)}
+    have_point = False
+    num_rolls = 0
+    num_rolls_point = 0
+    # Begin consumption of events
     for ev in roll_events:
+        num_rolls += 1
+        if have_point:
+            num_rolls_point += 1
         if ev.type == 'point':
             if ev.args['is_won']:
+                assert have_point
                 points['won'][ev.value] += 1
+                have_point = False
             elif ev.args['is_lost']:
+                assert have_point
                 points['lost'][ev.args['point_value']] += 1
+                have_point = False
             else:
+                assert not have_point
                 points['established'][ev.value] += 1
+                have_point = True
         elif ev.type == 'craps':
             craps[ev.value] += 1
         elif ev.type == 'natural':
@@ -87,6 +100,12 @@ def calculate_all_statistics(roll_events):
             pairs[ev.dice[0]][ev.dice[1]] += 1
         else:
             pairs[ev.dice[1]][ev.dice[0]] += 1
+    # End consumption of events
+    num_7s = counts[7]
+    num_7s_point = sum(points['lost'][i] for i in points['lost'])
+    rsr = None if not num_7s else num_rolls / num_7s
+    rsr_point = None if not num_7s_point else \
+        num_rolls_point / num_7s_point
     return {
         'points': points,
         'craps': craps,
@@ -95,6 +114,9 @@ def calculate_all_statistics(roll_events):
         'counts': counts,
         'counts_dice': dice,
         'counts_pairs': pairs,
+        'ratios': {
+            'rsr': rsr, 'rsr_point': rsr_point,
+        },
     }
 
 
