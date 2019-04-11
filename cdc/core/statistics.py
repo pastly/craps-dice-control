@@ -48,6 +48,46 @@ def do_stats(out_fd, counts):
     out_fd.write('\n')
 
 
+def combine_statistics(*a):
+    ''' Given two or more statistic dictionaries from
+    calculate_all_statistics(), aggregate the stats and return a new stat
+    dictionary '''
+    if not len(a):
+        return {}
+    if len(a) == 1:
+        return a[0]
+    out_stats, a = a[0], a[1:]
+    for work in a:
+        # parts of the stat dict that are 3 layers deep and can be simply
+        # summed
+        for k1 in {'points', 'counts_pairs'}:
+            if k1 not in work:
+                continue
+            if k1 not in out_stats:
+                out_stats[k1] = {}
+            for k2 in work[k1]:
+                if k2 not in out_stats[k1]:
+                    out_stats[k1][k2] = {}
+                for k3 in work[k1][k2]:
+                    if k3 not in out_stats[k1][k2]:
+                        out_stats[k1][k2][k3] = 0
+                    out_stats[k1][k2][k3] += work[k1][k2][k3]
+        # parts of the stat dict that are 2 layers deep and can be simply
+        # summed
+        for k1 in {
+                'counts_hard', 'craps', 'naturals', 'counts', 'counts_dice',
+                'num_rolls'}:
+            if k1 not in work:
+                continue
+            if k1 not in out_stats:
+                out_stats[k1] = {}
+            for k2 in work[k1]:
+                if k2 not in out_stats[k1]:
+                    out_stats[k1][k2] = 0
+                out_stats[k1][k2] += work[k1][k2]
+    return out_stats
+
+
 def calculate_all_statistics(roll_events):
     points = {
         'won': {
@@ -101,11 +141,6 @@ def calculate_all_statistics(roll_events):
         else:
             pairs[ev.dice[1]][ev.dice[0]] += 1
     # End consumption of events
-    num_7s = counts[7]
-    num_7s_point = sum(points['lost'][i] for i in points['lost'])
-    rsr = None if not num_7s else num_rolls / num_7s
-    rsr_point = None if not num_7s_point else \
-        num_rolls_point / num_7s_point
     return {
         'points': points,
         'craps': craps,
@@ -114,9 +149,10 @@ def calculate_all_statistics(roll_events):
         'counts': counts,
         'counts_dice': dice,
         'counts_pairs': pairs,
-        'ratios': {
-            'rsr': rsr, 'rsr_point': rsr_point,
-        },
+        'num_rolls': {
+            'overall': num_rolls,
+            'point': num_rolls_point,
+        }
     }
 
 

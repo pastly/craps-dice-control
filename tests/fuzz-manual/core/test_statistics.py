@@ -90,14 +90,6 @@ def test_statistics():  # noqa: C901
                     assert point == e.args['point_value']
                     points['lost'][point] += 1
                     point = None
-        try:
-            rsr = num_rolls / num_7s
-        except ZeroDivisionError:
-            rsr = None
-        try:
-            rsr_point = num_rolls_point / num_7s_point
-        except ZeroDivisionError:
-            rsr_point = None
         # Here we finally call the code that we're testing
         out_stats = stat.calculate_all_statistics(evs)
         assert out_stats == {
@@ -108,11 +100,12 @@ def test_statistics():  # noqa: C901
             'counts': counts,
             'counts_pairs': pairs,
             'counts_dice': dice,
-            'ratios': {
-                'rsr': rsr,
-                'rsr_point': rsr_point,
+            'num_rolls': {
+                'overall': num_rolls,
+                'point': num_rolls_point,
             },
         }
+        assert num_rolls > num_rolls_point
         for i in {4, 6, 8, 10}:
             assert hards[i] <= counts[i]
         for i in {4, 5, 6, 8, 9, 10}:
