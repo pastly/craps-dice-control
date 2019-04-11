@@ -1,5 +1,5 @@
 import cdc.core.parse.rollseries as rs
-import cdc.core.statistics as stat
+from cdc.lib.statistics import Statistics
 import random
 
 
@@ -9,7 +9,7 @@ def rand_dice_pairs(num):
 
 
 def test_statistics():  # noqa: C901
-    for _ in range(100):
+    for _ in range(1000):
         points = {
             'won': {
                 4: 0, 5: 0, 6: 0, 8: 0, 9: 0, 10: 0,
@@ -35,7 +35,7 @@ def test_statistics():  # noqa: C901
         num_7s_point = 0
         evs = list(
             rs.dice_pairs_gen_to_events(
-                rand_dice_pairs(random.randint(1, 2000))))
+                rand_dice_pairs(random.randint(1, 200))))
         for e in evs:
             assert e.type in {'roll', 'point', 'craps', 'natural'}
             assert sum(e.dice) == e.value
@@ -91,20 +91,37 @@ def test_statistics():  # noqa: C901
                     points['lost'][point] += 1
                     point = None
         # Here we finally call the code that we're testing
-        out_stats = stat.calculate_all_statistics(evs)
-        assert out_stats == {
+        out_stats = Statistics.from_roll_events(evs)
+        assert out_stats.to_dict() == {
             'points': points,
             'craps': craps,
             'naturals': naturals,
-            'counts_hard': hards,
+            'hards': hards,
+            'pairs': pairs,
+            'dice': dice,
             'counts': counts,
-            'counts_pairs': pairs,
-            'counts_dice': dice,
-            'num_rolls': {
-                'overall': num_rolls,
-                'point': num_rolls_point,
-            },
+            'num_rolls': {'overall': num_rolls, 'point': num_rolls_point},
         }
+        assert out_stats.points == points
+        assert out_stats.craps == craps
+        assert out_stats.naturals == naturals
+        assert out_stats.hards == hards
+        assert out_stats.pairs == pairs
+        assert out_stats.dice == dice
+        assert out_stats.counts == counts
+        assert out_stats.num_rolls() == num_rolls
+        assert out_stats.num_rolls(point_only=False) == num_rolls
+        assert out_stats.num_rolls(point_only=True) == num_rolls_point
+        try:
+            assert out_stats.rsr() == num_rolls / counts[7]
+            assert out_stats.rsr(point_only=False) == num_rolls / num_7s
+        except ZeroDivisionError:
+            assert not num_7s
+        try:
+            assert out_stats.rsr(point_only=True) == \
+                num_rolls_point / num_7s_point
+        except ZeroDivisionError:
+            assert not num_7s_point
         assert num_rolls > num_rolls_point
         for i in {4, 6, 8, 10}:
             assert hards[i] <= counts[i]
