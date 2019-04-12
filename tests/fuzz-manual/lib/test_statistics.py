@@ -117,11 +117,14 @@ def test_statistics():  # noqa: C901
             assert out_stats.rsr(point_only=False) == num_rolls / num_7s
         except ZeroDivisionError:
             assert not num_7s
+            assert out_stats.rsr() == 0
+            assert out_stats.rsr(point_only=False) == 0
         try:
             assert out_stats.rsr(point_only=True) == \
                 num_rolls_point / num_7s_point
         except ZeroDivisionError:
             assert not num_7s_point
+            assert out_stats.rsr(point_only=True) == 0
         assert num_rolls > num_rolls_point
         for i in {4, 6, 8, 10}:
             assert hards[i] <= counts[i]

@@ -115,3 +115,33 @@ def test_combine_num_rolls():
     assert out.num_rolls() == 6
     assert out.num_rolls(point_only=False) == 6
     assert out.num_rolls(point_only=True) == 3
+
+
+def test_rsr_empty():
+    ''' Should not raise a ZeroDivisionError if there was nothing rolled '''
+    s = S.from_roll_events([])
+    assert s.rsr() == 0
+    assert s.rsr(point_only=False) == 0
+    assert s.rsr(point_only=True) == 0
+
+
+def test_rsr_no_points():
+    ''' If there was never any rolls with a point set, then rsr should be
+    non-zero, but rsr_point should be zero (instead of a ZeroDivisionError) '''
+    s = S.from_roll_events(
+        rs.dice_pairs_gen_to_events(
+            map(dice_pair_from_value, [2, 3, 7, 7, 7, 7, 11, 12])))
+    assert s.rsr() == 2
+    assert s.rsr(point_only=False) == 2
+    assert s.rsr(point_only=True) == 0
+
+
+def test_rsr_never_7s():
+    ''' If no 7s are ever rolled, rsr and rsr_point should both be zero
+    (instead of a ZeroDivisionError) '''
+    s = S.from_roll_events(
+        rs.dice_pairs_gen_to_events(
+            map(dice_pair_from_value, [2, 4, 4, 3])))
+    assert s.rsr() == 0
+    assert s.rsr(point_only=False) == 0
+    assert s.rsr(point_only=True) == 0

@@ -142,13 +142,16 @@ class Statistics:
         Optionally doesn't count dice rolls (of any value, 7 or otherwise) when
         there wasn't a point currently set.
 
-        This will raise ZeroDivisionError if there were no 7s rolled (wrt the
-        given point_only value)
+        To avoid ZeroDivisionError when there were no 7s rolled (wrt the given
+        point_only value), this returns 0 instead.
         '''
-        if point_only:
-            return self.num_rolls(point_only=True) / \
-                sum(self.points['lost'][i] for i in self.points['lost'])
-        return self.num_rolls() / self.counts[7]
+        try:
+            if point_only:
+                return self.num_rolls(point_only=True) / \
+                    sum(self.points['lost'][i] for i in self.points['lost'])
+            return self.num_rolls() / self.counts[7]
+        except ZeroDivisionError:
+            return 0
 
     def combine(self, rhs):
         ''' Update self with stats from rhs. Most stats just need incrementing
