@@ -92,7 +92,7 @@ def plot(out_fd, data_set, add_expected=False):
             num_rolls = sum(counts[i] for i in counts)
         points = []
         for i in range(2, 12+1):
-            y = counts[i]/num_rolls
+            y = counts[i]/num_rolls if num_rolls else 0
             if y > ymax:
                 ymax = y
             points.append((i, y))
@@ -103,7 +103,7 @@ def plot(out_fd, data_set, add_expected=False):
             xs = [x+bar_width/2 for x in xs]
         plt.bar(xs, ys, bar_width, label=label)
     assert num_rolls is not None
-    ymax = min(1, round(ymax*1.1, 2))
+    ymax = max(0.001, min(1, round(ymax*1.1, 2)))
     plt.legend(loc='best')
     plt.xlim(left=2-BAR_WIDTH_SINGLE, right=12+BAR_WIDTH_SINGLE)
     plt.ylim(bottom=0, top=ymax)
