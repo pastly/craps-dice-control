@@ -116,7 +116,7 @@ class Strategy:
         for bet in self.bets:
             if not isinstance(bet, CBCome) and not isinstance(bet, CBDontCome):
                 continue
-            # Should be safe to assert that the bet is working. Other could
+            # Should be safe to assert that the bet is working. Other code
             # should make it impossible to turn (d)come bets off, but if it
             # were somehow possible to turn (d)come bets off, then we wouldn't
             # want them to be converted
