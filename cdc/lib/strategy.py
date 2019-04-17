@@ -128,7 +128,7 @@ class Strategy:
             # number, the come bet has already won/lost and we won't end up
             # here. Assert on the roll being a point number in case this ever
             # changes.
-            assert self.last_roll.value in {4, 5, 6, 8, 9, 10}
+            assert self.last_roll.value in _POINT_VALUES
             new_bet = copy(bet)
             new_bet.set_point(self.last_roll.value)
             remove_bets.append(bet)
@@ -328,7 +328,7 @@ class CBCome(CBContractMixin, CrapsBet):
         return self.amount
 
     def set_point(self, point):
-        assert point in {4, 5, 6, 8, 9, 10}
+        assert point in _POINT_VALUES
         assert self.point is None
         self._point = point
         self.roll_win = {point}
@@ -352,7 +352,7 @@ class CBDontCome(CBContractMixin, CrapsBet):
         return self.amount
 
     def set_point(self, point):
-        assert point in {4, 5, 6, 8, 9, 10}
+        assert point in _POINT_VALUES
         assert self.point is None
         self._point = point
         self.roll_win = {7}
@@ -370,7 +370,7 @@ class CBOdds(CrapsBet):
 
     def __init__(self, point, is_dont, *a, **kw):
         super().__init__(*a, **kw)
-        assert point in {4, 5, 6, 8, 9, 10}
+        assert point in _POINT_VALUES
         self._point = point
         self._is_dont = is_dont
         if not is_dont:
@@ -631,7 +631,7 @@ class BasicPlaceStrategy(Strategy):
             for bet in self.bets:
                 bet.set_working(False)
             return
-        assert self.point in {4, 5, 6, 8, 9, 10}
+        assert self.point in _POINT_VALUES
         for bet in self.bets:
             bet.set_working(True)
         already_placed_values = [b.value for b in self.bets]
@@ -681,7 +681,7 @@ class ThreePointMolly(Strategy):
             if not len([b for b in self.bets if isinstance(b, CBPass)]):
                 self.add_bet(CBPass(amount))
             return
-        assert self.point in {4, 5, 6, 8, 9, 10}
+        assert self.point in _POINT_VALUES
         come_bets = [b for b in self.bets if isinstance(b, CBCome)]
         odds_bets = [b for b in self.bets if isinstance(b, CBOdds)]
         # Make pass odds bet if needed
