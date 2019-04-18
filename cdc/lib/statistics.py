@@ -19,7 +19,29 @@ class Statistics:
         }
 
     @staticmethod
-    def from_roll_events(roll_events):
+    def from_roll_events(*set_of_roll_event_lists):
+        ''' Takes one or more list-like structures of roll event list-like
+        structures. Parses each roll event list into a Statistics object,
+        combines all the Statistics objects, and the returns the final
+        Statistics object.
+
+        If you only have one list of roll events, just pass it as the only
+        argument. Do NOT explode it or anything silly like that.
+
+        If you have more than one list of roll events, note that they are
+        interpreted as completely independent serieses of events. The last roll
+        of the nth roll event list is NOT interpreted to come immediately
+        before the first roll of the n+1th roll event list. Regardless of
+        whether or not the nth roll event list ends with a point, the n+1th
+        roll event list will start with NO point established.
+        '''
+        s = Statistics._from_roll_events_impl([])
+        for roll_events in set_of_roll_event_lists:
+            s.combine(Statistics._from_roll_events_impl(roll_events))
+        return s
+
+    @staticmethod
+    def _from_roll_events_impl(roll_events):
         points = {
             'won': {
                 4: 0, 5: 0, 6: 0, 8: 0, 9: 0, 10: 0,

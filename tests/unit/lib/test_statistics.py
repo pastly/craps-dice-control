@@ -13,8 +13,30 @@ def dice_pair_from_value(val):
 
 
 def test_combine_empty():
-    s = S.from_roll_events([])
-    assert s.num_rolls() == 0
+    s1 = S.from_roll_events([])
+    assert s1.num_rolls() == 0
+    s2 = S.from_roll_events([])
+    s2.combine(s1)
+    assert s1.to_dict() == s2.to_dict()
+
+
+def test_combine_many_empty():
+    s1 = S.from_roll_events([], [])
+    s2 = S.from_roll_events([])
+    assert s1.num_rolls() == 0
+    assert s1.to_dict() == s2.to_dict()
+
+
+def test_combine_many_some_empty():
+    s1 = S.from_roll_events(
+        [],
+        rs.dice_pairs_gen_to_events(
+            map(dice_pair_from_value, [2])))
+    s2 = S.from_roll_events(
+        rs.dice_pairs_gen_to_events(
+            map(dice_pair_from_value, [2])),
+        [])
+    assert s1.to_dict() == s2.to_dict()
 
 
 def test_combine_pairs():
