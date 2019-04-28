@@ -81,6 +81,7 @@ setup(
     install_requires=[
         'matplotlib',
         'scipy',
+        'sly',
     ],
     extras_require={
         'test': ['tox', 'pytest', 'coverage'],
