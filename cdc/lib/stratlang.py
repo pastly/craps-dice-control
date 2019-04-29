@@ -5,16 +5,33 @@ import sys
 
 import sly
 
+from cdc.lib.strategy import CBPass, CBDontPass, CBCome, CBDontCome, CBField,\
+    CBPlace, CBHardWay, CBOdds
+
+
+class InvalidValueError(Exception):
+    def __init__(self, value, valid):
+        self.value = value
+        self.valid = valid
+
+    def __str__(self):
+        return '%s is not a valid option (%s)' % (self.value, self.valid)
+
 
 class _Lexer(sly.Lexer):
     tokens = {
-        INT, FLOAT,
+        INT, FLOAT, BOOL,
         IF, THEN, ELSE, DONE,
         AND, OR,
         LAST,
         LEN,
         EQ, NEQ, GT, LT, GTEQ, LTEQ,
         LIST_ID,
+        MAKE_BET,
+        BET_TYPE_NO_ARG,
+        BET_TYPE_1_ARG_POINT_VALUE,
+        BET_TYPE_1_ARG_HARD_WAY,
+        BET_TYPE_2_ARG_ODDS,
     }
 
     literals = {'{', '}', '(', ')'}
@@ -39,6 +56,16 @@ class _Lexer(sly.Lexer):
         'rolls since point established|'\
         'rolls?|'\
         'points?)'
+    MAKE_BET = r'make bet'
+    BET_TYPE_NO_ARG = r'('\
+        'dont pass|'\
+        'pass|'\
+        'dont come|'\
+        'come|'\
+        'field)'
+    BET_TYPE_1_ARG_POINT_VALUE = r'place'
+    BET_TYPE_1_ARG_HARD_WAY = r'hard'
+    BET_TYPE_2_ARG_ODDS = r'odds'
 
     @_(r'\d*\.\d+')
     def FLOAT(self, t):
@@ -48,6 +75,11 @@ class _Lexer(sly.Lexer):
     @_(r'\d+')
     def INT(self, t):
         t.value = int(t.value)
+        return t
+
+    @_(r'([Tt]rue|[Ff]alse)')
+    def BOOL(self, t):
+        t.value = t.value.lower() == 'true'
         return t
 
 
@@ -153,6 +185,27 @@ class ListId(enum.Enum):
         elif s == 'rolls since point established':
             return ListId.RollsSincePoint
         raise NotImplementedError('Can\'t convert "%s" to ListId' % orig_s)
+
+
+class MakeBetOp(Expr):
+    def __init__(self, bet):
+        self.bet = bet
+
+    def __str__(self):
+        return 'MakeBet(%s)' % self.bet
+
+
+def bet_type_from_str(s):
+    return {
+        'pass': CBPass,
+        'dont pass': CBDontPass,
+        'come': CBCome,
+        'dont come': CBDontCome,
+        'field': CBField,
+        'place': CBPlace,
+        'hard': CBHardWay,
+        'odds': CBOdds,
+    }[s.lower()]
 
 
 class TailOp(Expr):
@@ -274,6 +327,44 @@ class _Parser(sly.Parser):
     @_('LEN LIST_ID')
     def expr(self, p):
         return LenOp(p.LIST_ID)
+
+    @_('MAKE_BET bet')
+    def expr(self, p):
+        return MakeBetOp(p.bet)
+
+    @_('BET_TYPE_NO_ARG amount')
+    def bet(self, p):
+        return bet_type_from_str(p.BET_TYPE_NO_ARG)(p.amount)
+
+    @_('BET_TYPE_1_ARG_POINT_VALUE point_value amount')
+    def bet(self, p):
+        return bet_type_from_str(p[0])(p.point_value, p.amount)
+
+    @_('BET_TYPE_1_ARG_HARD_WAY hard_value amount')
+    def bet(self, p):
+        return bet_type_from_str(p[0])(p.hard_value, p.amount)
+
+    @_('BET_TYPE_2_ARG_ODDS point_value BOOL amount')
+    def bet(self, p):
+        return bet_type_from_str(p[0])(p.point_value, p.BOOL, p.amount)
+
+    @_('INT')
+    def amount(self, p):
+        return p.INT
+
+    @_('INT')
+    def point_value(self, p):
+        valid = {4, 5, 6, 8, 9, 10}
+        if p.INT in valid:
+            return p.INT
+        raise InvalidValueError(p.INT, valid)
+
+    @_('INT')
+    def hard_value(self, p):
+        valid = {4, 6, 8, 10}
+        if p.INT in valid:
+            return p.INT
+        raise InvalidValueError(p.INT, valid)
 
 
 def _flatten(result):
