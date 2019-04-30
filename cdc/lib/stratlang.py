@@ -18,6 +18,16 @@ class InvalidValueError(Exception):
         return '%s is not a valid option (%s)' % (self.value, self.valid)
 
 
+class StrategyTooComplexError(Exception):
+    def __init__(self, complexity, max_complexity):
+        self.complexity = complexity
+        self.max_complexity = max_complexity
+
+    def __str__(self):
+        return 'The strategy is too complex (stopped_at=%s max=%s)' % \
+            (self.complexity, self.max_complexity)
+
+
 class _Lexer(sly.Lexer):
     tokens = {
         INT, FLOAT, BOOL,
@@ -258,12 +268,19 @@ class _Parser(sly.Parser):
     tokens = _Lexer.tokens
     _complexity = 0
 
+    def __init__(self, *a, max_complexity=None, **kw):
+        super().__init__(*a, **kw)
+        self._max_complexity = max_complexity
+
     @property
     def complexity(self):
         return self._complexity
 
     def add_complexity(self, amount=1):
         self._complexity += amount
+        if self._max_complexity and self.complexity > self._max_complexity:
+            raise StrategyTooComplexError(
+                self.complexity, self._max_complexity)
 
     def error(self, t):
         raise SyntaxError(t)
@@ -412,18 +429,18 @@ def _flatten(result):
             yield item
 
 
-def parse_stream(stream_fd):
-    p = _Parser()
+def parse_stream(stream_fd, max_complexity=None):
+    p = _Parser(max_complexity=max_complexity)
     yield from _flatten(p.parse(_Lexer().tokenize(stream_fd.read())))
     # print('The complexity is', p.complexity)
 
 
-def parse(s):
-    yield from parse_stream(io.StringIO(s))
+def parse(s, max_complexity=None):
+    yield from parse_stream(io.StringIO(s), max_complexity)
 
 
-def _test_parse_complexity(s):
-    p = _Parser()
+def _test_parse_complexity(s, max_complexity=None):
+    p = _Parser(max_complexity=max_complexity)
     for _ in _flatten(p.parse(_Lexer().tokenize(io.StringIO(s).read()))):
         pass
     return p.complexity

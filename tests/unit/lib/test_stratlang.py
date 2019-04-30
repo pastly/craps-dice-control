@@ -1,5 +1,5 @@
 from cdc.lib.stratlang import parse, InvalidValueError, ListId, VarId,\
-    _test_parse_complexity
+    _test_parse_complexity, StrategyTooComplexError
 from cdc.lib.strategy import CBPass, CBDontPass, CBCome, CBDontCome, CBField,\
     CBPlace, CBHardWay, CBOdds
 
@@ -329,3 +329,20 @@ def test_complex_nested_if_4():
     s = 'if 1 then if 2 then if 3 then if 4 then done else '\
         '{make bet pass 5 done 6 done}'
     assert _test_parse_complexity(s) == 6
+
+
+def test_complex_almost_too_complex():
+    max_complex = 10
+    for reps in {max_complex - 1, max_complex}:
+        s = '{' + ' '.join(['1 done'] * reps) + '}'
+        # Would raise StrategyTooComplexError if too complex
+        _test_parse_complexity(s, max_complexity=max_complex)
+
+
+def test_complex_too_complex():
+    max_complex = 10
+    reps = max_complex + 1
+    s = '{' + ' '.join(['1 done'] * reps) + '}'
+    # Would raise StrategyTooComplexError if too complex
+    with pytest.raises(StrategyTooComplexError):
+        _test_parse_complexity(s, max_complexity=max_complex)
