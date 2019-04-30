@@ -422,6 +422,13 @@ def parse(s):
     yield from parse_stream(io.StringIO(s))
 
 
+def _test_parse_complexity(s):
+    p = _Parser()
+    for _ in _flatten(p.parse(_Lexer().tokenize(io.StringIO(s).read()))):
+        pass
+    return p.complexity
+
+
 if __name__ == '__main__':
     for item in parse_stream(sys.stdin):
         print(type(item), item)

@@ -1,4 +1,5 @@
-from cdc.lib.stratlang import parse, InvalidValueError, ListId, VarId
+from cdc.lib.stratlang import parse, InvalidValueError, ListId, VarId,\
+    _test_parse_complexity
 from cdc.lib.strategy import CBPass, CBDontPass, CBCome, CBDontCome, CBField,\
     CBPlace, CBHardWay, CBOdds
 
@@ -221,3 +222,110 @@ def test_var_id_invalid():
     for s in {'aaaaaa', '', '1986'}:
         with pytest.raises(NotImplementedError):
             VarId.from_string(s)
+
+
+def test_complex_done():
+    s = '{' + ' '.join(['done'] * 100) + '}'
+    assert _test_parse_complexity(s) == 0
+    s = '{' + '\n'.join(['done'] * 100) + '}'
+    assert _test_parse_complexity(s) == 0
+
+
+def test_complex_literal_expr():
+    s = '1 done'
+    assert _test_parse_complexity(s) == 1
+    s = '{' + ' '.join(['1 done'] * 100) + '}'
+    assert _test_parse_complexity(s) == 100
+    s = '{' + '\n'.join(['1 done'] * 100) + '}'
+    assert _test_parse_complexity(s) == 100
+
+
+def test_complex_last_list_expr():
+    s = 'last roll done'
+    assert _test_parse_complexity(s) == 1
+    s = 'last 3 roll done'
+    assert _test_parse_complexity(s) == 1
+
+
+def test_complex_var_expr():
+    s = 'point done'
+    assert _test_parse_complexity(s) == 1
+    s = 'bankroll done'
+    assert _test_parse_complexity(s) == 1
+
+
+def test_complex_len_list_expr():
+    s = 'length of rolls done'
+    assert _test_parse_complexity(s) == 1
+
+
+def test_complex_make_bet_expr():
+    s = 'make bet pass 5 done'
+    assert _test_parse_complexity(s) == 1
+    s = 'make bet hard 4 5 done'
+    assert _test_parse_complexity(s) == 1
+    s = 'make bet odds 4 true 5 done'
+    assert _test_parse_complexity(s) == 1
+
+
+def test_complex_literal_cond():
+    s = 'if 1 then done'
+    assert _test_parse_complexity(s) == 1
+    s = 'if %s then done' % ' and'.join(['1'] * 100)
+    assert _test_parse_complexity(s) == 100
+    s = 'if %s then done' % ' or'.join(['1'] * 100)
+    assert _test_parse_complexity(s) == 100
+
+
+def test_complex_true_block_1():
+    # 1 for the ten in the condition, 1 for the 10 in the "then" block
+    s = 'if 10 then 10 done'
+    assert _test_parse_complexity(s) == 2
+
+
+def test_complex_true_block_2():
+    s = 'if 10 then {10 done 10 done}'
+    assert _test_parse_complexity(s) == 3
+
+
+def test_complex_false_block_1():
+    # 1 for the ten in the condition, 1 for the 10 in the "else" block
+    s = 'if 10 then done else 10 done'
+    assert _test_parse_complexity(s) == 2
+
+
+def test_complex_false_block_2():
+    s = 'if 10 then done else {10 done 10 done}'
+    assert _test_parse_complexity(s) == 3
+
+
+def test_complex_both_true_false_block_1():
+    s = 'if 10 then 10 done else 10 done'
+    assert _test_parse_complexity(s) == 3
+
+
+def test_complex_both_true_false_block_2():
+    s = 'if 10 then {10 done 10 done} else {10 done 10 done}'
+    assert _test_parse_complexity(s) == 5
+
+
+def test_complex_nested_if_1():
+    s = 'if 1 then if 2 then done'
+    assert _test_parse_complexity(s) == 2
+
+
+def test_complex_nested_if_2():
+    s = 'if 1 then if 2 then done else done else done'
+    assert _test_parse_complexity(s) == 2
+
+
+def test_complex_nested_if_3():
+    s = 'if 1 then if 2 then if 3 then if 4 then done else '\
+        'make bet pass 5 done'
+    assert _test_parse_complexity(s) == 5
+
+
+def test_complex_nested_if_4():
+    s = 'if 1 then if 2 then if 3 then if 4 then done else '\
+        '{make bet pass 5 done 6 done}'
+    assert _test_parse_complexity(s) == 6
