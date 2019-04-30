@@ -1,4 +1,4 @@
-from cdc.lib.stratlang import parse, InvalidValueError
+from cdc.lib.stratlang import parse, InvalidValueError, ListId, VarId
 from cdc.lib.strategy import CBPass, CBDontPass, CBCome, CBDontCome, CBField,\
     CBPlace, CBHardWay, CBOdds
 
@@ -192,3 +192,32 @@ def test_bet_odds_invalid_is_dont():
             s = 'make bet odds %d %s %d done' % (point, is_dont_str, amount)
             with pytest.raises(SyntaxError) as e:
                 [_ for _ in parse(s)]
+
+
+def test_list_id_valid():
+    for list_id, list_strs in (
+            (ListId.Rolls, ('roll', 'rolls', 'Roll')),
+            (ListId.Points, ('point', 'points', 'Points')),
+            (ListId.RollsSincePoint, ('rolls since point established',))):
+        for list_str in list_strs:
+            assert ListId.from_string(list_str) == list_id
+
+
+def test_list_id_invalid():
+    for s in {'aaaaaa', '', '1986'}:
+        with pytest.raises(NotImplementedError):
+            ListId.from_string(s)
+
+
+def test_var_id_valid():
+    for var_id, var_strs in (
+            (VarId.Point, ('point', 'pOiNt')),
+            (VarId.Bankroll, ('bankroll', 'BaNkRoLl'))):
+        for var_str in var_strs:
+            assert VarId.from_string(var_str) == var_id
+
+
+def test_var_id_invalid():
+    for s in {'aaaaaa', '', '1986'}:
+        with pytest.raises(NotImplementedError):
+            VarId.from_string(s)

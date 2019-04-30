@@ -26,7 +26,7 @@ class _Lexer(sly.Lexer):
         LAST,
         LEN,
         EQ, NEQ, GT, LT, GTEQ, LTEQ,
-        LIST_ID,
+        VAR_ID, LIST_ID,
         MAKE_BET,
         BET_TYPE_NO_ARG,
         BET_TYPE_1_ARG_POINT_VALUE,
@@ -52,6 +52,7 @@ class _Lexer(sly.Lexer):
     LT = r'<'
     NEQ = r'(is not|!=)'
     EQ = r'(is|==)'
+    VAR_ID = r'(point|bankroll)'
     LIST_ID = r'('\
         'rolls since point established|'\
         'rolls?|'\
@@ -169,6 +170,21 @@ class CondOp(Expr):
         return not self == rhs
 
 
+class VarId(enum.Enum):
+    Point = enum.auto()
+    Bankroll = enum.auto()
+
+    @staticmethod
+    def from_string(s):
+        try:
+            return {
+                'point': VarId.Point,
+                'bankroll': VarId.Bankroll,
+            }[s.lower()]
+        except KeyError:
+            raise NotImplementedError('Can\'t convert "%s" to VarId' % s)
+
+
 class ListId(enum.Enum):
     Rolls = enum.auto()
     Points = enum.auto()
@@ -176,7 +192,6 @@ class ListId(enum.Enum):
 
     @staticmethod
     def from_string(orig_s):
-        orig_s
         s = orig_s.lower()
         if s in {'roll', 'rolls'}:
             return ListId.Rolls
@@ -327,6 +342,10 @@ class _Parser(sly.Parser):
     @_('LEN LIST_ID')
     def expr(self, p):
         return LenOp(p.LIST_ID)
+
+    @_('VAR_ID')
+    def expr(self, p):
+        return VarId.from_string(p.VAR_ID)
 
     @_('MAKE_BET bet')
     def expr(self, p):
