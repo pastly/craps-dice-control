@@ -256,6 +256,14 @@ class LenOp(Expr):
 class _Parser(sly.Parser):
     # debugfile = '/dev/stderr'
     tokens = _Lexer.tokens
+    _complexity = 0
+
+    @property
+    def complexity(self):
+        return self._complexity
+
+    def add_complexity(self, amount=1):
+        self._complexity += amount
 
     def error(self, t):
         raise SyntaxError(t)
@@ -282,10 +290,12 @@ class _Parser(sly.Parser):
 
     @_('literal')
     def expr(self, p):
+        self.add_complexity()
         return p.literal
 
     @_('empty')
     def expr(self, p):
+        # self.add_complexity()
         return p.empty
 
     @_('')
@@ -314,6 +324,7 @@ class _Parser(sly.Parser):
 
     @_('literal')
     def cond(self, p):
+        self.add_complexity()
         return p.literal
 
     @_('cond AND cond', 'cond OR cond')
@@ -333,22 +344,27 @@ class _Parser(sly.Parser):
 
     @_('LAST LIST_ID')
     def expr(self, p):
+        self.add_complexity()
         return TailOp(p.LIST_ID, 1)
 
     @_('LAST INT LIST_ID')
     def expr(self, p):
+        self.add_complexity()
         return TailOp(p.LIST_ID, p.INT)
 
     @_('LEN LIST_ID')
     def expr(self, p):
+        self.add_complexity()
         return LenOp(p.LIST_ID)
 
     @_('VAR_ID')
     def expr(self, p):
+        self.add_complexity()
         return VarId.from_string(p.VAR_ID)
 
     @_('MAKE_BET bet')
     def expr(self, p):
+        self.add_complexity()
         return MakeBetOp(p.bet)
 
     @_('BET_TYPE_NO_ARG amount')
@@ -397,7 +413,9 @@ def _flatten(result):
 
 
 def parse_stream(stream_fd):
-    yield from _flatten(_Parser().parse(_Lexer().tokenize(stream_fd.read())))
+    p = _Parser()
+    yield from _flatten(p.parse(_Lexer().tokenize(stream_fd.read())))
+    # print('The complexity is', p.complexity)
 
 
 def parse(s):
