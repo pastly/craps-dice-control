@@ -9,35 +9,19 @@ import pytest
 
 
 def test_int_literal_valid():
-    for i in {'0', '1', '98794'}:
+    for i in {'0', '1', '98794', '-1', '-98794'}:
         s = '%s done' % i
         ret = [_ for _ in parse(s)]
         assert len(ret) == 1
         assert ret[0] == int(i)
 
 
-def test_int_literal_invalid():
-    for i in {'-10', '-1', '-98794'}:
-        s = '%s done' % i
-        with pytest.raises(LexError) as e:
-            [_ for _ in parse(s)]
-        assert e.value.error_index == 0
-
-
 def test_float_literal_valid():
-    for i in {'0.0', '.1', '1.0', '813.15'}:
+    for i in {'0.0', '.1', '1.0', '813.15', '-0.0', '-.1', '-1.0', '-813.15'}:
         s = '%s done' % i
         ret = [_ for _ in parse(s)]
         assert len(ret) == 1
         assert ret[0] == float(i)
-
-
-def test_float_literal_invalid():
-    for i in {'-0.0', '-.1', '-1.0', '-813.15'}:
-        s = '%s done' % i
-        with pytest.raises(LexError) as e:
-            [_ for _ in parse(s)]
-        assert e.value.error_index == 0
 
 
 def test_forms_of_eq_are_same():

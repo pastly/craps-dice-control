@@ -36,6 +36,7 @@ class _Lexer(sly.Lexer):
         LAST, LEN,
         SET, TO, USER_VAR_ID,
         EQ, NEQ, GT, LT, GTEQ, LTEQ,
+        PLUS, MINUS, MULT, DIV,
         VAR_ID, LIST_ID,
         MAKE_BET,
         BET_TYPE_NO_ARG,
@@ -64,6 +65,10 @@ class _Lexer(sly.Lexer):
     LT = r'<'
     NEQ = r'(is not|!=)'
     EQ = r'(is|==)'
+    PLUS = r'\+'
+    MINUS = r'-'
+    MULT = r'\*'
+    DIV = r'/'
     VAR_ID = r'(current point|bankroll)'
     LIST_ID = r'('\
         'rolls since point established|'\
@@ -111,6 +116,10 @@ class BinOpId(enum.Enum):
     Lteq = enum.auto()
     And = enum.auto()
     Or = enum.auto()
+    Plus = enum.auto()
+    Minus = enum.auto()
+    Mult = enum.auto()
+    Div = enum.auto()
 
     @staticmethod
     def from_string(s):
@@ -127,6 +136,10 @@ class BinOpId(enum.Enum):
             '&&': BinOpId.And,
             'or': BinOpId.Or,
             '||': BinOpId.Or,
+            '+': BinOpId.Plus,
+            '-': BinOpId.Minus,
+            '*': BinOpId.Mult,
+            '/': BinOpId.Div,
         }[s.lower()]
 
     def __str__(self):
@@ -139,6 +152,10 @@ class BinOpId(enum.Enum):
             BinOpId.Lteq: '<=',
             BinOpId.And: '&&',
             BinOpId.Or: '||',
+            BinOpId.Plus: '+',
+            BinOpId.Minus: '-',
+            BinOpId.Mult: '*',
+            BinOpId.Div: '/',
         }[self]
 
 
@@ -289,6 +306,12 @@ class _Parser(sly.Parser):
     tokens = _Lexer.tokens
     _complexity = 0
 
+    precedence = (
+        ('left', PLUS, MINUS,),
+        ('left', MULT, DIV,),
+        ('right', UMINUS),
+    )
+
     def __init__(self, *a, max_complexity=None, **kw):
         super().__init__(*a, **kw)
         self._max_complexity = max_complexity
@@ -384,6 +407,10 @@ class _Parser(sly.Parser):
     def cond(self, p):
         return BinOp(p[1], p.cond0, p.cond1)
 
+    @_('MINUS expr %prec UMINUS')
+    def expr(self, p):
+        return -1 * p.expr
+
     @_(
         'expr EQ expr',
         'expr NEQ expr',
@@ -393,6 +420,15 @@ class _Parser(sly.Parser):
         'expr LTEQ expr',
     )
     def cond(self, p):
+        return BinOp(p[1], p.expr0, p.expr1)
+
+    @_(
+        'expr PLUS expr',
+        'expr MINUS expr',
+        'expr MULT expr',
+        'expr DIV expr',
+    )
+    def expr(self, p):
         return BinOp(p[1], p.expr0, p.expr1)
 
     @_('LAST LIST_ID')
