@@ -33,8 +33,8 @@ class _Lexer(sly.Lexer):
         INT, FLOAT, BOOL,
         IF, THEN, ELSE, DONE,
         AND, OR,
-        LAST,
-        LEN,
+        LAST, LEN,
+        SET, TO, USER_VAR_ID,
         EQ, NEQ, GT, LT, GTEQ, LTEQ,
         VAR_ID, LIST_ID,
         MAKE_BET,
@@ -56,6 +56,8 @@ class _Lexer(sly.Lexer):
     OR = r'(or|\|\|)'
     LAST = r'last'
     LEN = r'(length|number) of'
+    SET = r'set'
+    TO = r'to'
     GTEQ = r'>='
     LTEQ = r'<='
     GT = r'>'
@@ -92,6 +94,8 @@ class _Lexer(sly.Lexer):
     def BOOL(self, t):
         t.value = t.value.lower() == 'true'
         return t
+
+    USER_VAR_ID = r'[A-Za-z_][A-Za-z0-9_]*'
 
 
 class Expr:
@@ -156,6 +160,23 @@ class BinOp(Expr):
 
     def __ne__(self, rhs):
         return not self == rhs
+
+
+class AssignOp(Expr):
+    def __init__(self, user_var, expr):
+        self._var = user_var
+        self._expr = expr
+
+    @property
+    def var(self):
+        return self._var
+
+    @property
+    def expr(self):
+        return self._expr
+
+    def __str__(self):
+        return '%s = %s' % (self.var, self.expr)
 
 
 class CondOp(Expr):
@@ -301,6 +322,14 @@ class _Parser(sly.Parser):
     def stmtlist(self, p):
         return p.stmt
 
+    @_('assign DONE')
+    def stmt(self, p):
+        return p.assign
+
+    @_('SET USER_VAR_ID TO expr')
+    def assign(self, p):
+        return AssignOp(p.USER_VAR_ID, p.expr)
+
     @_('expr DONE')
     def stmt(self, p):
         return p.expr
@@ -318,6 +347,10 @@ class _Parser(sly.Parser):
     @_('')
     def empty(self, p):
         return None
+
+    @_('BOOL')
+    def literal(self, p):
+        return p.BOOL
 
     @_('numeric')
     def literal(self, p):

@@ -1,5 +1,5 @@
 from cdc.lib.stratlang import parse, InvalidValueError, ListId, VarId,\
-    _test_parse_complexity, StrategyTooComplexError
+    _test_parse_complexity, StrategyTooComplexError, AssignOp
 from cdc.lib.strategy import CBPass, CBDontPass, CBCome, CBDontCome, CBField,\
     CBPlace, CBHardWay, CBOdds
 
@@ -186,12 +186,11 @@ def test_bet_odds_invalid_is_dont():
     for point in {4, 5, 6, 8, 9, 10}:
         for is_dont_str in {'T', 't', 'F', 'f', 'foo', 'FaLsE', 'TrUe'}:
             s = 'make bet odds %d %s %d done' % (point, is_dont_str, amount)
-            with pytest.raises(LexError) as e:
+            with pytest.raises(SyntaxError):
                 [_ for _ in parse(s)]
-            assert e.value.error_index in {16, 17}
         for is_dont_str in {'12'}:
             s = 'make bet odds %d %s %d done' % (point, is_dont_str, amount)
-            with pytest.raises(SyntaxError) as e:
+            with pytest.raises(SyntaxError):
                 [_ for _ in parse(s)]
 
 
@@ -346,3 +345,15 @@ def test_complex_too_complex():
     # Would raise StrategyTooComplexError if too complex
     with pytest.raises(StrategyTooComplexError):
         _test_parse_complexity(s, max_complexity=max_complex)
+
+
+def test_simple_assign_op():
+    var_id = 'foo'
+    for val in [1, 0, 14623, True, False]:
+        s = 'set %s to %s done' % (var_id, str(val))
+        ret = [_ for _ in parse(s)]
+        assert len(ret) == 1
+        ret = ret[0]
+        assert isinstance(ret, AssignOp)
+        assert ret.var == var_id
+        assert ret.expr == val
