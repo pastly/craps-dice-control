@@ -211,7 +211,7 @@ def test_list_id_invalid():
 
 def test_var_id_valid():
     for var_id, var_strs in (
-            (VarId.Point, ('point', 'pOiNt')),
+            (VarId.Point, ('current point', 'cUrReNt pOiNt')),
             (VarId.Bankroll, ('bankroll', 'BaNkRoLl'))):
         for var_str in var_strs:
             assert VarId.from_string(var_str) == var_id
@@ -247,7 +247,7 @@ def test_complex_last_list_expr():
 
 
 def test_complex_var_expr():
-    s = 'point done'
+    s = 'current point done'
     assert _test_parse_complexity(s) == 1
     s = 'bankroll done'
     assert _test_parse_complexity(s) == 1

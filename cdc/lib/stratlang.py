@@ -64,7 +64,7 @@ class _Lexer(sly.Lexer):
     LT = r'<'
     NEQ = r'(is not|!=)'
     EQ = r'(is|==)'
-    VAR_ID = r'(point|bankroll)'
+    VAR_ID = r'(current point|bankroll)'
     LIST_ID = r'('\
         'rolls since point established|'\
         'rolls?|'\
@@ -209,7 +209,7 @@ class VarId(enum.Enum):
     def from_string(s):
         try:
             return {
-                'point': VarId.Point,
+                'current point': VarId.Point,
                 'bankroll': VarId.Bankroll,
             }[s.lower()]
         except KeyError:
