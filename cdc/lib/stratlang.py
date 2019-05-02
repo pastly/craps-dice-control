@@ -328,6 +328,9 @@ class _Parser(sly.Parser):
 
     @_('SET USER_VAR_ID TO expr')
     def assign(self, p):
+        # expr will add 1 already (unless empty), but add additional complexity
+        # for the memory usage
+        self.add_complexity()
         return AssignOp(p.USER_VAR_ID, p.expr)
 
     @_('expr DONE')

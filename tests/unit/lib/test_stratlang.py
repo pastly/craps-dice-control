@@ -357,3 +357,42 @@ def test_simple_assign_op():
         assert isinstance(ret, AssignOp)
         assert ret.var == var_id
         assert ret.expr == val
+
+
+def test_simple_assign_op_empty():
+    var_id = 'foo'
+    s = 'set %s to done' % var_id
+    ret = [_ for _ in parse(s)]
+    assert len(ret) == 1
+    ret = ret[0]
+    assert isinstance(ret, AssignOp)
+    assert ret.var == var_id
+    assert ret.expr is None
+
+
+def test_simple_assign_op_invalid():
+    var_id = 'foo'
+    for val in {'bar'}:
+        s = 'set %s to %s done' % (var_id, str(val))
+        with pytest.raises(SyntaxError):
+            [_ for _ in parse(s)]
+
+
+def test_complex_simple_assign_op():
+    var_id = 'foo'
+    for val in {1, True}:
+        s = 'set %s to %s done' % (var_id, str(val))
+        assert _test_parse_complexity(s) == 2
+
+
+def test_complex_assign_op_special():
+    var_id = 'foo'
+    for val in {'last roll', 'length of points', 'current point', 'bankroll'}:
+        s = 'set %s to %s done' % (var_id, val)
+        assert _test_parse_complexity(s) == 2
+
+
+def test_complex_assign_op_empty_expr():
+    var_id = 'foo'
+    s = 'set %s to done' % (var_id,)
+    assert _test_parse_complexity(s) == 1
