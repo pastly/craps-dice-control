@@ -394,6 +394,10 @@ class _Parser(sly.Parser):
     def stmt(self, p):
         return CondOp(p.cond, p.block0, p.block1)
 
+    @_('"(" expr ")"')
+    def expr(self, p):
+        return p.expr
+
     @_('"(" cond ")"')
     def cond(self, p):
         return p.cond

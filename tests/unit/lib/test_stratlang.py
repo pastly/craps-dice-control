@@ -3,8 +3,6 @@ from cdc.lib.stratlang import parse, InvalidValueError, ListId, VarId,\
 from cdc.lib.strategy import CBPass, CBDontPass, CBCome, CBDontCome, CBField,\
     CBPlace, CBHardWay, CBOdds
 
-from sly.lex import LexError
-
 import pytest
 
 
@@ -380,3 +378,20 @@ def test_complex_assign_op_empty_expr():
     var_id = 'foo'
     s = 'set %s to done' % (var_id,)
     assert _test_parse_complexity(s) == 1
+
+
+def test_math_1():
+    for op in {'+', '-', '*', '/'}:
+        s = 'set foo to 4 %s ((4)) done' % op
+        ret = [_ for _ in parse(s)]
+        assert len(ret) == 1
+        ret = ret[0]
+        assert '(4 %s 4)' % op in str(ret)
+
+
+def test_math_2():
+    s = 'set foo to 1 + 2 * 3 + 4 done'
+    ret = [_ for _ in parse(s)]
+    assert len(ret) == 1
+    ret = ret[0]
+    assert '((1 + (2 * 3)) + 4)' in str(ret)
