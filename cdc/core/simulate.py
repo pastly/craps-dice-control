@@ -112,7 +112,7 @@ class UserDefinedStrategy(Strategy):
                 else:
                     res = item.expr
                 # print('Setting', item.var, 'to', res)
-                user_vars[item.var] = item.expr
+                user_vars[item.var] = res
             elif ii(item, tuple):
                 # reverse so first is on top of stack
                 stack.extend(item[::-1])
