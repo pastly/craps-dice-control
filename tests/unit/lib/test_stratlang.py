@@ -258,6 +258,11 @@ def test_complex_literal_cond():
     assert _test_parse_complexity(s) == 100
 
 
+def test_complex_many_literal_cond():
+    s = 'if 1 and 2 and 3 or 4 and 5 or 6 then done'
+    assert _test_parse_complexity(s) == 6
+
+
 def test_complex_true_block_1():
     # 1 for the ten in the condition, 1 for the 10 in the "then" block
     s = 'if 10 then 10 done'
