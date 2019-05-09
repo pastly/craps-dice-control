@@ -27,7 +27,7 @@ def _batch(iterable, n=1):
 
 
 def _calc_die_weights(stats):
-    weights = stats['counts_dice']
+    weights = stats['dice']
     for i in range(1, 6+1):
         assert i in weights
         assert isinstance(weights[i], int) or isinstance(weights[i], float)
