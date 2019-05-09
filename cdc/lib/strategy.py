@@ -152,6 +152,7 @@ class Strategy:
         return []
 
     def after_roll(self, roll):
+        # print(roll.dice)
         self._rolls.append(roll)
         evs = []
         evs.extend(self._handle_pushers())

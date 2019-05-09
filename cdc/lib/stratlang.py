@@ -286,6 +286,13 @@ class TailOp(Expr):
     def __ne__(self, rhs):
         return not self == rhs
 
+    def get(self, the_list):
+        if self.num > len(the_list) or not self.num:
+            return None
+        if self.num == 1:
+            return the_list[-1]
+        return the_list[-1*self.num:]
+
 
 class LenOp(Expr):
     def __init__(self, list_id):
@@ -302,7 +309,7 @@ class LenOp(Expr):
 
 
 class _Parser(sly.Parser):
-    # debugfile = '/dev/stderr'
+    # debugfile = 'parser.debug.txt'
     tokens = _Lexer.tokens
     _complexity = 0
 
