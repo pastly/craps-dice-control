@@ -386,7 +386,7 @@ def test_complex_assign_op_empty_expr():
 
 
 def test_math_1():
-    for op in {'+', '-', '*', '/'}:
+    for op in {'+', '-', '*', '/', '%'}:
         s = 'set foo to 4 %s ((4)) done' % op
         ret = [_ for _ in parse(s)]
         assert len(ret) == 1

@@ -82,6 +82,7 @@ class UserDefinedStrategy(Strategy):
             lang.BinOpId.Minus: lambda l_, r_: l_   - r_,
             lang.BinOpId.Mult:  lambda l_, r_: l_   * r_,
             lang.BinOpId.Div:   lambda l_, r_: l_   / r_,
+            lang.BinOpId.Mod:   lambda l_, r_: l_   % r_,
         }[bin_op.op](left, right)
 
     def make_bets(self):

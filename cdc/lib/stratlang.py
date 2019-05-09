@@ -36,7 +36,7 @@ class _Lexer(sly.Lexer):
         LAST, LEN,
         SET, TO, USER_VAR_ID,
         EQ, NEQ, GT, LT, GTEQ, LTEQ,
-        PLUS, MINUS, MULT, DIV,
+        PLUS, MINUS, MULT, DIV, MOD,
         VAR_ID, LIST_ID,
         MAKE_BET,
         BET_TYPE_NO_ARG,
@@ -69,6 +69,7 @@ class _Lexer(sly.Lexer):
     MINUS = r'-'
     MULT = r'\*'
     DIV = r'/'
+    MOD = r'%'
     VAR_ID = r'(current point|bankroll)'
     LIST_ID = r'('\
         'rolls since point established|'\
@@ -120,6 +121,7 @@ class BinOpId(enum.Enum):
     Minus = enum.auto()
     Mult = enum.auto()
     Div = enum.auto()
+    Mod = enum.auto()
 
     @staticmethod
     def from_string(s):
@@ -140,6 +142,7 @@ class BinOpId(enum.Enum):
             '-': BinOpId.Minus,
             '*': BinOpId.Mult,
             '/': BinOpId.Div,
+            '%': BinOpId.Mod,
         }[s.lower()]
 
     def __str__(self):
@@ -156,6 +159,7 @@ class BinOpId(enum.Enum):
             BinOpId.Minus: '-',
             BinOpId.Mult: '*',
             BinOpId.Div: '/',
+            BinOpId.Mod: '%',
         }[self]
 
 
@@ -438,6 +442,7 @@ class _Parser(sly.Parser):
         'expr MINUS expr',
         'expr MULT expr',
         'expr DIV expr',
+        'expr MOD expr',
     )
     def expr(self, p):
         return BinOp(p[1], p.expr0, p.expr1)
