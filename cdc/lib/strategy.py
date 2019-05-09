@@ -170,7 +170,7 @@ class Strategy:
         # if point, cannot make pass-type bets
         if self.point is not None:
             if isinstance(b, CBPass) or isinstance(b, CBDontPass):
-                return False, 'Cannot make (Don\'t) Pass bet during '\
+                return False, 'Can only make (Don\'t) Pass bet during '\
                     'come out roll'
         # if (don't) come, it cannot have a point value associated with it
         # already
