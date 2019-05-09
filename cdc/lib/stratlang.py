@@ -30,7 +30,7 @@ class StrategyTooComplexError(Exception):
 
 class _Lexer(sly.Lexer):
     tokens = {
-        INT, FLOAT, BOOL,
+        INT, FLOAT, BOOL, NONE,
         IF, THEN, ELSE, DONE,
         AND, OR,
         LAST, LEN,
@@ -100,6 +100,10 @@ class _Lexer(sly.Lexer):
     def BOOL(self, t):
         t.value = t.value.lower() == 'true'
         return t
+
+    @_(r'[Nn]one')
+    def NONE(self, t):
+        return None
 
     USER_VAR_ID = r'[A-Za-z_][A-Za-z0-9_]*'
 
@@ -392,9 +396,9 @@ class _Parser(sly.Parser):
     def literal(self, p):
         return p.BOOL
 
-    @_('numeric')
+    @_('numeric', 'NONE')
     def literal(self, p):
-        return p.numeric
+        return p[0]
 
     @_('INT', 'FLOAT')
     def numeric(self, p):
