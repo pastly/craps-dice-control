@@ -311,6 +311,9 @@ class LenOp(Expr):
     def __ne__(self, rhs):
         return not self == rhs
 
+    def get(self, the_list):
+        return len(the_list)
+
 
 class _Parser(sly.Parser):
     # debugfile = 'parser.debug.txt'

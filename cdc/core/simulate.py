@@ -63,9 +63,9 @@ class UserDefinedStrategy(Strategy):
         right = self._varid_to_value(right)\
             if ii(right, lang.VarId) else right
         left = left.get(self._listid_to_value(left.list_id))\
-            if ii(left, lang.TailOp) else left
+            if ii(left, (lang.TailOp, lang.LenOp)) else left
         right = right.get(self._listid_to_value(right.list_id))\
-            if ii(right, lang.TailOp) else right
+            if ii(right, (lang.TailOp, lang.LenOp)) else right
         left = left.value if ii(left, R) else left
         right = right.value if ii(right, R) else right
         # print('l/r', left, right)
