@@ -51,12 +51,12 @@ class UserDefinedStrategy(Strategy):
         except KeyError:
             raise NotImplementedError('Can\'t get list value for %s' % list_id)
 
-    def _reduce_binop(self, bin_op):
+    def _reduce_binop(self, bin_op, user_vars):
         # print('Reducing:', bin_op)
         ii = isinstance
-        left = self._reduce_binop(bin_op.left)\
+        left = self._reduce_binop(bin_op.left, user_vars)\
             if ii(bin_op.left, lang.BinOp) else bin_op.left
-        right = self._reduce_binop(bin_op.right)\
+        right = self._reduce_binop(bin_op.right, user_vars)\
             if ii(bin_op.right, lang.BinOp) else bin_op.right
         left = self._varid_to_value(left)\
             if ii(left, lang.VarId) else left
@@ -68,6 +68,8 @@ class UserDefinedStrategy(Strategy):
             if ii(right, (lang.TailOp, lang.LenOp)) else right
         left = left.value if ii(left, R) else left
         right = right.value if ii(right, R) else right
+        left = user_vars[left.id] if ii(left, lang.UserVar) else left
+        right = user_vars[right.id] if ii(right, lang.UserVar) else right
         # print('l/r', left, right)
         return {
             lang.BinOpId.Eq:    lambda l_, r_: l_  == r_,
@@ -99,7 +101,7 @@ class UserDefinedStrategy(Strategy):
                 self.add_bet(item.bet)
             elif ii(item, lang.CondOp):
                 if ii(item.cond, lang.BinOp):
-                    res = self._reduce_binop(item.cond)
+                    res = self._reduce_binop(item.cond, user_vars)
                 else:
                     res = bool(item.cond)
                 if res:
@@ -108,7 +110,7 @@ class UserDefinedStrategy(Strategy):
                     stack.append(item.false_case)
             elif ii(item, lang.AssignOp):
                 if ii(item.expr, lang.BinOp):
-                    res = self._reduce_binop(item.expr)
+                    res = self._reduce_binop(item.expr, user_vars)
                 else:
                     res = item.expr
                 # print('Setting', item.var, 'to', res)
@@ -118,6 +120,8 @@ class UserDefinedStrategy(Strategy):
                 stack.extend(item[::-1])
             elif ii(item, (int, float)) or item is None:
                 pass
+            elif ii(item, lang.UserVar):
+                print(item.id, 'is', user_vars[item.id])
             else:
                 print('WARN IGNORING :::', type(item), item)
                 raise NotImplementedError(

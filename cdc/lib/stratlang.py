@@ -226,6 +226,26 @@ class CondOp(Expr):
         return not self == rhs
 
 
+class UserVar(Expr):
+    def __init__(self, id):
+        self._id = id
+
+    @property
+    def id(self):
+        return self._id
+
+    def __str__(self):
+        return 'UserVar<%s>' % self.id
+
+    def __eq__(self, rhs):
+        ''' Only checks that the ID is the same. We don't know the associated
+        value '''
+        return self.id == rhs.id
+
+    def __ne__(self, rhs):
+        return not self == rhs
+
+
 class VarId(enum.Enum):
     Point = enum.auto()
     Bankroll = enum.auto()
@@ -453,6 +473,10 @@ class _Parser(sly.Parser):
     )
     def expr(self, p):
         return BinOp(p[1], p.expr0, p.expr1)
+
+    @_('USER_VAR_ID')
+    def expr(self, p):
+        return UserVar(p.USER_VAR_ID)
 
     @_('LAST LIST_ID')
     def expr(self, p):

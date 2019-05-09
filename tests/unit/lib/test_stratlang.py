@@ -1,5 +1,5 @@
 from cdc.lib.stratlang import parse, InvalidValueError, ListId, VarId,\
-    _test_parse_complexity, StrategyTooComplexError, AssignOp
+    _test_parse_complexity, StrategyTooComplexError, AssignOp, UserVar, BinOp
 from cdc.lib.strategy import CBPass, CBDontPass, CBCome, CBDontCome, CBField,\
     CBPlace, CBHardWay, CBOdds
 
@@ -359,7 +359,7 @@ def test_simple_assign_op_empty():
 
 def test_simple_assign_op_invalid():
     var_id = 'foo'
-    for val in {'bar'}:
+    for val in {'if', 'then', '<', 'and', 'done'}:
         s = 'set %s to %s done' % (var_id, str(val))
         with pytest.raises(SyntaxError):
             [_ for _ in parse(s)]
@@ -400,3 +400,52 @@ def test_math_2():
     assert len(ret) == 1
     ret = ret[0]
     assert '((1 + (2 * 3)) + 4)' in str(ret)
+
+
+def test_uservar_assign_simple():
+    for v in [1, None, 1.2]:
+        s = 'set foo to %s done' % v
+        ret = [_ for _ in parse(s)]
+        assert len(ret) == 1
+        ret = ret[0]
+        assert ret.var == 'foo'
+        assert ret.expr == v
+
+
+def test_uservar_assign_rhs_uservar():
+    # While 'bar' isn't set at this point and would throw an error when this
+    # code is parsed, it's okay to specify it here as far as the parser is
+    # concerned
+    s = 'set foo to bar done'
+    ret = [_ for _ in parse(s)]
+    assert len(ret) == 1
+    ret = ret[0]
+    assert ret.var == 'foo'
+    assert ret.expr == UserVar('bar')
+
+
+def test_uservar_assign_rhs_expr_1():
+    s = 'set foo to 1 + 2 done'
+    ret = [_ for _ in parse(s)]
+    assert len(ret) == 1
+    ret = ret[0]
+    assert ret.var == 'foo'
+    assert ret.expr == BinOp('+', 1, 2)
+
+
+def test_uservar_assign_rhs_expr_2():
+    s = 'set foo to 1 + bar done'
+    ret = [_ for _ in parse(s)]
+    assert len(ret) == 1
+    ret = ret[0]
+    assert ret.var == 'foo'
+    assert ret.expr == BinOp('+', 1, UserVar('bar'))
+
+
+def test_uservar_assign_rhs_expr_3():
+    s = 'set foo to bar * 2 done'
+    ret = [_ for _ in parse(s)]
+    assert len(ret) == 1
+    ret = ret[0]
+    assert ret.var == 'foo'
+    assert ret.expr == BinOp('*', UserVar('bar'), 2)
