@@ -112,14 +112,14 @@ def test_simple_bad_die_1():
     event_gen = event_gen_from_str("71")
     with pytest.raises(ValueError) as ex_info:
         list(event_gen)[0]
-    assert 'ImpossibleDieValueError: 7' in str(ex_info)
+    assert 'ImpossibleDieValueError' in str(ex_info)
 
 
 def test_simple_bad_die_2():
     event_gen = event_gen_from_str(".1")
     with pytest.raises(ValueError) as ex_info:
         list(event_gen)[0]
-    assert 'ImpossibleDieValueError: .' in str(ex_info)
+    assert 'ImpossibleDieValueError' in str(ex_info)
 
 
 def test_simple_no_events_1():
